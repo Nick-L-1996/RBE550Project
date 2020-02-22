@@ -108,6 +108,16 @@ class GazeboWorld:
         cast_shadows2 = xml.SubElement(visual, 'cast_shadows')
         cast_shadows2.text = '0'
 
+        material = xml.SubElement(visual, 'material')
+
+        script = xml.SubElement(material, 'script')
+
+        uri = xml.SubElement(script, 'uri')
+        uri.text = 'file://media/materials/scripts/gazebo.material</uri'
+
+        name = xml.SubElement(script, 'name')
+        name.text = 'Gazebo/Grey'
+
         return world
 
 
