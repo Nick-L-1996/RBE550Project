@@ -1,15 +1,22 @@
+"""
+This file will generate a empty world and will allow us to create a gazebo world from Python
+As of 2/22/2020 at 12:30 AM, this file can:
+    1)  Generate an empty world
+    2)  Generate a sphere at a given location
+
+To run the product of this code, navigate to this directory and run: "gazebo  [filename generated]"
+"""
 import xml.etree.ElementTree as xml
 
-class GazeboWorld:
+class GazeboWorld:  
     def __init__(self, filename):
         self.filename = filename
         self.root = xml.Element('sdf')
         self.root.set('version', '1.6')
         self.tree = xml.ElementTree(self.root)
-        self.makeEmptyWorld()
-        self.makeSphere(1,1,1,0,0,0,.5,"my_cylinder")
+        self.world = self.makeEmptyWorld()
+        self.makeSphere(-0.617073, -1.87563, 0.5, 0, -0, 0,.5,"ball")
 
-        pass
 
     def makeEmptyWorld(self):
         world = xml.SubElement(self.root, 'world')
@@ -101,6 +108,8 @@ class GazeboWorld:
         cast_shadows2 = xml.SubElement(visual, 'cast_shadows')
         cast_shadows2.text = '0'
 
+        return world
+
 
     # add block to gazebo world
     # dim - 1x3 (length,width,height)
@@ -116,7 +125,7 @@ class GazeboWorld:
 
     def makeSphere(self, x, y, z, alpha, beta, gamma, radius, name):
         poseString = str(x) + " " + str(y) + " " + str(z) + " " + str(alpha) + " " + str(gamma) + " " + str(beta)
-        model = xml.SubElement(self.root, "model")
+        model = xml.SubElement(self.world, "model")
         model.set('name', name)
         pose = xml.SubElement(model, "pose")
         pose.set('frame', '')
@@ -173,6 +182,4 @@ class GazeboWorld:
             self.tree.write(fh)
 
 world = GazeboWorld("test_sphere.world")
-world2 = GazeboWorld("test_sphere.xml")
 world.write_2_file()
-world2.write_2_file()
