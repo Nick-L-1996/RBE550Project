@@ -48,6 +48,60 @@ class GazeboWorld:
         direction = xml.SubElement(light, 'direction')
         direction.text = '-0.5 0.5 -1'
 
+        ground_plane = xml.SubElement(world, 'model')
+        ground_plane.set('name', 'ground_plane')
+
+        static = xml.SubElement(ground_plane, 'static')
+        static.text = '1'
+
+        link = xml.SubElement(ground_plane, 'link')
+        link.set('name', 'link')
+
+        collision = xml.SubElement(link,'collision')
+        collision.set('name', 'collision')
+
+        geometry = xml.SubElement(collision, 'geometry')
+
+        plane = xml.SubElement(geometry, 'plane')
+
+        normal = xml.SubElement(plane, 'normal')
+        normal.text = '0 0 1'
+
+        size = xml.SubElement(plane, 'size')
+        size.text = '100 100'
+
+        surface = xml.SubElement(collision, 'surface')
+
+        friction = xml.SubElement(surface, 'friction')
+
+        ode = xml.SubElement(friction, 'ode')
+
+        mu = xml.SubElement(ode, 'mu')
+        mu.text = '100'
+
+        mu2 = xml.SubElement(ode, 'mu2')
+        mu2.text = '50'
+
+        max_contacts = xml.SubElement(collision, 'max_contacts')
+        max_contacts.text = '10'
+
+        visual = xml.SubElement(link, 'visual')
+        visual.set('name', 'visual')
+
+        geometry2 = xml.SubElement(visual, 'geometry')
+
+        plane2 = xml.SubElement(geometry2, 'plane')
+
+        normal2 = xml.SubElement(plane2, 'normal')
+        normal2.text = '0 0 1'
+
+        size2 = xml.SubElement(plane2, 'size')
+        size2.text = '100 100'
+
+        cast_shadows2 = xml.SubElement(visual, 'cast_shadows')
+        cast_shadows2.text = '0'
+
+
     # add block to gazebo world
     # dim - 1x3 (length,width,height)
     # pos - 1x3 (position) ---> assume not rotated
@@ -107,7 +161,7 @@ class GazeboWorld:
         self_collide.text = str(0)
 
         # kinematics
-        kinematics = xml.SubElement(link, "kinematics")
+        kinematics = xml.SubElement(link, "kinematic")
         kinematics.text = str(0)
 
         # gravity
@@ -119,4 +173,6 @@ class GazeboWorld:
             self.tree.write(fh)
 
 world = GazeboWorld("test_sphere.world")
+world2 = GazeboWorld("test_sphere.xml")
 world.write_2_file()
+world2.write_2_file()
