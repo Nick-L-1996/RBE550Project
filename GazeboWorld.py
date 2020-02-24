@@ -14,8 +14,6 @@ class GazeboWorld:
         self.root.set('version', '1.6')
         self.tree = xml.ElementTree(self.root)
         self.world = self.makeEmptyWorld()
-        self.makeSphere(-0.617073, -1.87563, 0.5, 0, -0, 0,.5,"ball")
-
 
     def makeEmptyWorld(self):
         world = xml.SubElement(self.root, 'world')
@@ -253,33 +251,58 @@ class GazeboWorld:
         radius1 = xml.SubElement(cylinder, "radius")
         radius1.text = str(radius)  # set radius
         height = xml.SubElement(cylinder, "length")
-        height.text = str(0.1)  # set fixed height
+        height.text = str(0.05)  # set fixed height
 
     def createSquare(self, tag, side):
         tile = xml.SubElement(tag, "box")
         size = xml.SubElement(tile, "size")
-        size.text = str(side) + " " + str(side) + " " + str(0.1)
+        size.text = str(side) + " " + str(side) + " " + str(0.05)
 
     def addTexture(self, surfacetag, visualtag, terrain):
+        friction = xml.SubElement(surfacetag, 'friction')
+        ode = xml.SubElement(friction, 'ode')
+        mu = xml.SubElement(ode, 'mu')
+        mu2 = xml.SubElement(ode, 'mu2')
         material = xml.SubElement(visualtag, 'material')
         script = xml.SubElement(material, 'script')
 
         uri = xml.SubElement(script, 'uri')
         uri.text = 'file://media/materials/scripts/gazebo.material'
 
+        # https://www.engineeringtoolbox.com/friction-coefficients-d_778.html
         name = xml.SubElement(script, 'name')
-        name.text = 'Gazebo/Grey'
+        if terrain == 'grass':
+            name.text = 'Gazebo/Grass'
+            mu.text = '.35'  # from source above
+            mu2.text = '.35'
+        if terrain == 'road':
+            name.text = 'Gazebo/Road'
+            mu.text = '.72'  # from source above
+            mu2.text = '.72'
+        if terrain == 'pavement':
+            name.text = 'Gazebo/Residential'
+            mu.text = '.72'  # from source above
+            mu2.text = '.72'
+        if terrain == 'mud':
+            name.text = 'Gazebo/DarkYellow'  # placeholder
+            mu.text = '0.158'  # estimation
+            mu2.text = '0.158'
+        if terrain == 'water':
+            name.text = 'Gazebo/Blue'  # placeholder
+            mu.text = '0.0001'  # estimation
+            mu2.text = '0.0001'
 
 world = GazeboWorld()
 world2 = GazeboWorld()
 shape = "square"
 dim = 1
-pose = [0, 0, 0.707]
+pose = [0, 0, 0]
 # shape1 = "circle"
 # pose1 = [1.5, 1.5, 0, 0, 0, 0]
-material = "sand"
+material = "grass"
 name = "morganrosemoroney"
 world.makeCellTile(pose,shape,dim,material,name)
+world.makeCellTile([1, 0, 0],shape,dim,"water",'water')
 # world.makeCellTile(pose1,shape1,dim/2,material,name)
 # world.makeCellTile([2, 2, 0, 0, 0, 0],shape1,dim/2,material,name)
 world.writeFile("test_sphere.world")
