@@ -264,7 +264,11 @@ class SimulationMap(QtWidgets.QMainWindow):
                     self.scene.addItem(shape)
                     self.DrawnObstacles.append(Node(event.scenePos().x(), event.scenePos().y(), 1, 1))
                     self.bringStartEndToTop()
-
+    def bringStartEndToTop(self):
+        self.scene.removeItem(self.StartShape)
+        self.scene.addItem(self.StartShape)
+        self.scene.removeItem(self.EndShape)
+        self.scene.addItem(self.EndShape)
     def MouseMovementEvent(self, event):
         if self.ShapeType != "None" and self.CursorState == 5:
             x = event.scenePos().x()
