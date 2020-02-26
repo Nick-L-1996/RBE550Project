@@ -26,6 +26,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.ClearObjectsBTN.clicked.connect(self.ClearObs)
         self.AddCircleBTN.clicked.connect(self.circleSel)
         self.AddSquareBTN.clicked.connect(self.SquareSel)
+        self.PathAnimationTimer = QtCore.QTimer()
+        self.PathAnimationTimer.timeout.connect(self.AnimatePath)
 
         self.SizeEntry.setText("10")
         self.AngleEntry.setText("0")
@@ -37,8 +39,60 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.CurrentShape = None
         self.TranslatedShape = None
         self.CursorState = 0
+        self.StartShape = None
+        self.EndShape = None
+        self.Map = []
+        self.DrawnSquares = []
+        self.DrawnObstacles = []
+        self.fieldObstacleList = []
+        self.Path = []
+        self.PathState = 0
+        self.StartNode = Node(0, 0, 0, 0)
+        self.MapType = 1
         self.scene = QGraphicsScene()
+        self.black = QColor(qRgb(0, 0, 0))
+        self.blue = QColor(qRgb(30, 144, 255))
+        self.red = QColor(qRgb(220, 20, 60))
+        self.green = QColor(qRgb(0, 255, 127))
+        self.Orange = QColor(qRgb(255, 165, 0))
+        self.yellow = QColor(qRgb(255, 255, 0))
+        self.purple = QColor(qRgb(238, 130, 238))
+        self.magenta = QColor(qRgb(255, 0, 255))
 
+        self.makeFieldMap()
+
+    def ClearSearch(self):
+        self.StatusLabel.setText("Status: Ready")
+        self.scene.removeItem(self.StartShape)
+        self.scene.removeItem(self.EndShape)
+        for item in self.Map:
+            for anotherItem in item:
+                if self.MapType == 0:
+                    anotherItem.parent = None
+                    anotherItem.Distance = 1000000000
+                    anotherItem.Heuristic = 1000000000
+                else:
+                    anotherItem.Obstacle = 0
+        if self.MapType == 0:
+            self.StartNode.Distance = 0
+        else:
+            self.AddCircleBTN.setEnabled(True)
+            self.AddSquareBTN.setEnabled(True)
+            self.DeleteShapeBTN.setEnabled(True)
+        self.PathAnimationTimer.stop()
+        time.sleep(0.1)
+        self.NumExpLBL.setText("# Expansions: 0")
+        for item in self.DrawnSquares:
+            SelectedNode = item
+            x = SelectedNode.xcoord
+            y = SelectedNode.ycoord
+            rect = self.scene.itemAt(x, y, QTransform())
+            self.scene.removeItem(rect)
+        self.DrawnSquares = []
+        self.Path = []
+        self.clearFieldMap()
+        self.scene.addItem(self.StartShape)
+        self.scene.addItem(self.EndShape)
     def circleSel(self):
         self.ShapeType = "Circle"
         self.CursorState = 5
@@ -326,6 +380,72 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.DrawnObstacles = []
         self.clearFieldMap()
 
+    def AnimatePath(self):
+        if(len(self.Path)>1200):
+            pass
+        else:
+            pathIndex = 0
+            LightIt = 0
+            for item in self.Path:
+                if(pathIndex<self.PathState):
+                    SelectedNode = item
+                    x = SelectedNode.xcoord
+                    y = SelectedNode.ycoord
+                    rect = self.scene.itemAt(x, y, QTransform())
+                    self.scene.removeItem(rect)
+
+                    if(self.MapType==0):
+                        rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
+                                      (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
+                        self.scene.addRect(rect, self.purple, self.purple)
+                    else:
+                        rect = QRectF(x - 2, y - 2,
+                                      4, 4)
+                        self.scene.addRect(rect, self.green, self.green)
+                    if (SelectedNode not in self.DrawnSquares):
+                        self.DrawnSquares.append(SelectedNode)
+                else:
+                    SelectedNode = item
+                    x = SelectedNode.xcoord
+                    y = SelectedNode.ycoord
+                    #removes twice to be safe
+                    rect = self.scene.itemAt(x, y, QTransform())
+                    self.scene.removeItem(rect)
+                    rect = self.scene.itemAt(x, y, QTransform())
+                    self.scene.removeItem(rect)
+
+                    if (LightIt==0):
+                        if(self.MapType ==0):
+                            rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
+                                          (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
+                            self.scene.addRect(rect, self.magenta, self.magenta)
+                        else:
+                            rect = QRectF(x - 2, y - 2,
+                                          4, 4)
+                            self.scene.addRect(rect, self.Orange, self.Orange)
+                        LightIt+=1
+                    else:
+                        if(self.MapType == 0):
+                            rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
+                                          (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
+                            self.scene.addRect(rect, self.purple, self.purple)
+                        else:
+                            rect = QRectF(x - 2, y - 2,
+                                          4, 4)
+                            self.scene.addRect(rect, self.green, self.green)
+                        LightIt += 1
+                        if(LightIt==20):
+                            LightIt=0
+                pathIndex+=1
+            self.PathState+=1
+            if(self.PathState==20):
+                self.PathState = 0
+
+    def clearFieldMap(self):
+        for item in self.fieldObstacleList:
+            Shape = self.scene.itemAt(item.xcoord, item.ycoord, QTransform())
+            self.scene.removeItem(Shape)
+        self.fieldObstacleList = []
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
 
