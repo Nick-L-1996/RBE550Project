@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Search Algorithm Simulator</string>
+   <string>Map Builder</string>
   </property>
   <property name="toolTipDuration">
    <number>4</number>
@@ -352,35 +352,35 @@
     </property>
     <layout class="QGridLayout" name="gridLayout_3">
      <item row="1" column="1">
-      <widget class="QPushButton" name="pushButton_4">
+      <widget class="QPushButton" name="ConcreteBTN">
        <property name="text">
         <string>Concrete</string>
        </property>
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QPushButton" name="pushButton_3">
+      <widget class="QPushButton" name="SandBTN">
        <property name="text">
         <string>Sand</string>
        </property>
       </widget>
      </item>
      <item row="0" column="0">
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="WaterBTN">
        <property name="text">
         <string>Water</string>
        </property>
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="MudBTN">
        <property name="text">
         <string>Mud</string>
        </property>
       </widget>
      </item>
      <item row="2" column="0">
-      <widget class="QPushButton" name="pushButton_5">
+      <widget class="QPushButton" name="TreesBTN">
        <property name="text">
         <string>Trees</string>
        </property>
@@ -418,7 +418,7 @@
      <x>0</x>
      <y>0</y>
      <width>1400</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

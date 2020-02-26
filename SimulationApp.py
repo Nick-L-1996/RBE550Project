@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QGraphicsScene, QGra
 from PyQt5.QtGui import QPainter, QColor, QPen, QBrush, qRgb, QTransform
 from PyQt5.QtCore import QThread, pyqtSignal, QPoint
 from PyQt5.QtCore import Qt, QLineF, QRectF
+from TerrainTypes import *
 from Node import Node
 designerFile = "MapBuilderGui.ui"
 
@@ -26,6 +27,11 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.ClearObjectsBTN.clicked.connect(self.ClearObs)
         self.AddCircleBTN.clicked.connect(self.circleSel)
         self.AddSquareBTN.clicked.connect(self.SquareSel)
+        self.WaterBTN.clicked.connect(self.WaterSelect)
+        self.MudBTN.clicked.connect(self.MudSelect)
+        self.SandBTN.clicked.connect(self.SandSelect)
+        self.ConcreteBTN.clicked.connect(self.ConcreteSelect)
+        self.TreesBTN.clicked.connect(self.TreeSelect)
         self.PathAnimationTimer = QtCore.QTimer()
         self.PathAnimationTimer.timeout.connect(self.AnimatePath)
 
@@ -36,8 +42,10 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Size = 10
         self.Angle = 0
         self.ShapeType = "None"
+        self.TerrainType = "Tree"
         self.CurrentShape = None
         self.TranslatedShape = None
+        self.CurrentTerrainObject = None
         self.CursorState = 0
         self.StartShape = None
         self.EndShape = None
@@ -102,6 +110,23 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.ShapeType = "Square"
         self.CursorState = 5
         self.BuildShape()
+
+    def MudSelect(self):
+        self.TerrainType = "Mud"
+        self.BuildShape()
+    def WaterSelect(self):
+        self.TerrainType = "Water"
+        self.BuildShape()
+    def ConcreteSelect(self):
+        self.TerrainType = "Concrete"
+        self.BuildShape()
+    def SandSelect(self):
+        self.TerrainType = "Sand"
+        self.BuildShape()
+    def TreeSelect(self):
+        self.TerrainType = "Tree"
+        self.BuildShape()
+
     def BuildShape(self):
         self.sceneShape = QGraphicsScene()
         self.ShapeMakerView.setScene(self.sceneShape)
@@ -119,21 +144,18 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def MakeShape(self, origin):
 
-        if self.ShapeType == "Circle":
-            Shape = QGraphicsEllipseItem(int(origin[0]-self.Size/2), int(origin[1]-self.Size/2), self.Size, self.Size)
-            Shape.setPen(QPen(self.black))
-            Shape.setBrush(QBrush(self.black, Qt.SolidPattern))
+        if self.TerrainType == "Water":
+            self.CurrentTerrainObject = Water(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+        elif self.TerrainType == "Mud":
+            self.CurrentTerrainObject = Mud(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+        elif self.TerrainType == "Concrete":
+            self.CurrentTerrainObject = Concrete(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+        elif self.TerrainType == "Sand":
+            self.CurrentTerrainObject = Sand(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+        elif self.TerrainType == "Tree":
+            self.CurrentTerrainObject = Trees(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
 
-        elif self.ShapeType == "Square":
-            Shape = QGraphicsRectItem(int(origin[0]-self.Size/2), int(origin[1]-self.Size/2),
-                                                  self.Size, self.Size)
-            Shape.setTransformOriginPoint(QPoint(origin[0], origin[1]))
-            Shape.setRotation(self.Angle)
-            Shape.setPen(QPen(self.black))
-            Shape.setBrush(QBrush(self.black, Qt.SolidPattern))
-        else:
-            Shape = None
-        return Shape
+        return self.CurrentTerrainObject.getGuiObject()
 
     def mapClickEventHandler(self, event):
         if self.SimRunning:
