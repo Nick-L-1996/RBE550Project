@@ -45,6 +45,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.DrawnSquares = []
         self.DrawnObstacles = []
         self.fieldObstacleList = []
+        self.SimRunning = False
         self.Path = []
         self.PathState = 0
         self.StartNode = Node(0, 0, 0, 0)
