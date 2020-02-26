@@ -108,6 +108,15 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.CurrentShape = self.MakeShape([0,0])
         self.sceneShape.addItem(self.CurrentShape)
 
+    def getCellIndex(self, X, Y):
+        if(X<0 or Y<0):
+            col = -1
+            row= - 1
+        else:
+            col = int(X/self.pixelsPerCell)
+            row = int(Y/self.pixelsPerCell)
+        return col, row
+
     def MakeShape(self, origin):
 
         if self.ShapeType == "Circle":
