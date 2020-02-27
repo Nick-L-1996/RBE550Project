@@ -7,6 +7,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QPoint
 from PyQt5.QtCore import Qt, QLineF, QRectF
 from TerrainTypes import *
 from Node import Node
+import numpy as np
 designerFile = "MapBuilderGui.ui"
 
 class SimulationMap(QtWidgets.QMainWindow):
@@ -35,23 +36,25 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.PathAnimationTimer = QtCore.QTimer()
         self.PathAnimationTimer.timeout.connect(self.AnimatePath)
 
-        self.SizeEntry.setText("10")
-        self.AngleEntry.setText("0")
-        self.SizeEntry.textChanged.connect(self.VerifySize)
-        self.AngleEntry.textChanged.connect(self.VerifyAngle)
-        self.Size = 10
-        self.Angle = 0
+        self.SizeEntry.addItem("Tiny")
+        self.SizeEntry.addItem("Small")
+        self.SizeEntry.addItem("Medium")
+        self.SizeEntry.addItem("Large")
+        self.SizeEntry.addItem("Very Large")
+        self.SizeEntry.setCurrentIndex(2)
+        self.SizeEntry.activated.connect(self.SizeSelectChange)
+        self.Size = 40
+
         self.ShapeType = "None"
         self.TerrainType = "Tree"
         self.CurrentShape = None
-        self.TranslatedShape = None
+        self.TranslatedShape = Mud(0, "Circle", 0, 0)
         self.CurrentTerrainObject = None
         self.CursorState = 0
         self.StartShape = None
         self.EndShape = None
         self.Map = []
-        self.DrawnSquares = []
-        self.DrawnObstacles = []
+        self.DrawnTerrain = []
         self.fieldObstacleList = []
         self.SimRunning = False
         self.Path = []
@@ -70,34 +73,28 @@ class SimulationMap(QtWidgets.QMainWindow):
 
         self.makeFieldMap()
 
+    def SizeSelectChange(self):
+        text = self.SizeEntry.currentText()
+        if text == "Tiny":
+            self.Size = 10
+        elif text == "Small":
+            self.Size = 20
+        elif text == "Medium":
+            self.Size = 40
+        elif text == "Large":
+            self.Size = 80
+        elif text == "Very Large":
+            self.Size = 160
+        self.BuildShape()
+
     def ClearSearch(self):
+        print("Clearing Search")
         self.StatusLabel.setText("Status: Ready")
         self.scene.removeItem(self.StartShape)
         self.scene.removeItem(self.EndShape)
-        for item in self.Map:
-            for anotherItem in item:
-                if self.MapType == 0:
-                    anotherItem.parent = None
-                    anotherItem.Distance = 1000000000
-                    anotherItem.Heuristic = 1000000000
-                else:
-                    anotherItem.Obstacle = 0
-        if self.MapType == 0:
-            self.StartNode.Distance = 0
-        else:
-            self.AddCircleBTN.setEnabled(True)
-            self.AddSquareBTN.setEnabled(True)
-            self.DeleteShapeBTN.setEnabled(True)
         self.PathAnimationTimer.stop()
         time.sleep(0.1)
         self.NumExpLBL.setText("# Expansions: 0")
-        for item in self.DrawnSquares:
-            SelectedNode = item
-            x = SelectedNode.xcoord
-            y = SelectedNode.ycoord
-            rect = self.scene.itemAt(x, y, QTransform())
-            self.scene.removeItem(rect)
-        self.DrawnSquares = []
         self.Path = []
         self.clearFieldMap()
         self.scene.addItem(self.StartShape)
@@ -109,32 +106,38 @@ class SimulationMap(QtWidgets.QMainWindow):
     def SquareSel(self):
         self.ShapeType = "Square"
         self.CursorState = 5
-        self.BuildShape()
+        if self.ShapeType != None:
+            self.BuildShape()
 
     def MudSelect(self):
         self.TerrainType = "Mud"
-        self.BuildShape()
+        if self.ShapeType != "None":
+            self.BuildShape()
     def WaterSelect(self):
         self.TerrainType = "Water"
-        self.BuildShape()
+        if self.ShapeType != "None":
+            self.BuildShape()
     def ConcreteSelect(self):
         self.TerrainType = "Concrete"
-        self.BuildShape()
+        if self.ShapeType != "None":
+            self.BuildShape()
     def SandSelect(self):
         self.TerrainType = "Sand"
-        self.BuildShape()
+        if self.ShapeType != "None":
+            self.BuildShape()
     def TreeSelect(self):
         self.TerrainType = "Tree"
-        self.BuildShape()
+        if self.ShapeType != "None":
+            self.BuildShape()
 
     def BuildShape(self):
         self.sceneShape = QGraphicsScene()
         self.ShapeMakerView.setScene(self.sceneShape)
-        self.CurrentShape = self.MakeShape([0,0])
-        self.sceneShape.addItem(self.CurrentShape)
+        self.CurrentTerrainObject = self.MakeShape([0,0])
+        self.sceneShape.addItem(self.CurrentTerrainObject.getGuiObject())
 
     def getCellIndex(self, X, Y):
-        if(X<0 or Y<0):
+        if(X<0 or Y<0 or X>=self.pixelsPerCell*self.GridCells or Y>=self.pixelsPerCell*self.GridCells):
             col = -1
             row= - 1
         else:
@@ -142,20 +145,31 @@ class SimulationMap(QtWidgets.QMainWindow):
             row = int(Y/self.pixelsPerCell)
         return col, row
 
+    def getCellCoord(self, X, Y):
+        if(X<0 or Y<0 or X>=self.Graphicswidth or Y>=self.Graphicsheight):
+            x = -1
+            y= - 1
+        else:
+            col = int(X/self.Size)
+            x = col*self.Size+self.Size/2-1
+            row = int(Y/self.Size)
+            y = row * self.Size + self.Size / 2 - 1
+        return x, y
+
     def MakeShape(self, origin):
 
         if self.TerrainType == "Water":
-            self.CurrentTerrainObject = Water(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+            CurrentTerrainObject = Water(self.Size, self.ShapeType, origin[0], origin[1])
         elif self.TerrainType == "Mud":
-            self.CurrentTerrainObject = Mud(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+            CurrentTerrainObject = Mud(self.Size, self.ShapeType, origin[0], origin[1])
         elif self.TerrainType == "Concrete":
-            self.CurrentTerrainObject = Concrete(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+            CurrentTerrainObject = Concrete(self.Size, self.ShapeType, origin[0], origin[1])
         elif self.TerrainType == "Sand":
-            self.CurrentTerrainObject = Sand(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+            CurrentTerrainObject = Sand(self.Size, self.ShapeType, origin[0], origin[1])
         elif self.TerrainType == "Tree":
-            self.CurrentTerrainObject = Trees(self.Size, self.Angle, self.ShapeType, origin[0], origin[1])
+            CurrentTerrainObject = Trees(self.Size, self.ShapeType, origin[0], origin[1])
 
-        return self.CurrentTerrainObject.getGuiObject()
+        return CurrentTerrainObject
 
     def mapClickEventHandler(self, event):
         if self.SimRunning:
@@ -166,178 +180,121 @@ class SimulationMap(QtWidgets.QMainWindow):
             if (col >= self.GridCells or row >= self.GridCells or col<0 or row<0):
                 print("Clicked Outside Window")
             else:
-                if self.CursorState ==1:
-                    if self.MapType == 0:
-                        col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
-                        SelectedNode = self.Map[row][col]
-                        if(SelectedNode!=self.EndNode):
-                            self.StartNode.Distance = 1000000000
-                            x = self.StartNode.xcoord
-                            y = self.StartNode.ycoord
-                            rect = self.scene.itemAt(x, y, QTransform())
-                            self.scene.removeItem(rect)
-                            x = SelectedNode.xcoord
-                            y = SelectedNode.ycoord
-                            if(SelectedNode.Obstacle==1):
-                                rect = self.scene.itemAt(x, y, QTransform())
-                                self.scene.removeItem(rect)
-                                SelectedNode.Obstacle = 0
-                            rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
-                                          (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
-                            self.scene.addRect(rect, self.blue, self.blue)
-                            self.StartNode = SelectedNode
-                            self.StartNode.Distance = 0
-                    else:
-                        col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
-
-                        if(col<1):
-                            col=1
-                        elif (col>self.GridCells-1):
-                            col = self.GridCells-1
-                        if (row<1):
-                            row = 1
-                        elif (row>self.GridCells-1):
-                            row = self.GridCells-1
-
-                        SelectedNode = self.Map[row][col]
-                        if (SelectedNode != self.EndPoint):
-                            self.StartPoint = SelectedNode
-                            x = SelectedNode.xcoord
-                            y = SelectedNode.ycoord
-                            self.scene.removeItem(self.StartShape)
-                            self.StartShape = QGraphicsEllipseItem(x-5, y-5, 10, 10)
-                            self.StartShape.setPen(QPen(self.black))
-                            self.StartShape.setBrush(QBrush(self.blue, Qt.SolidPattern))
-                            self.scene.addItem(self.StartShape)
-
-
-                elif self.CursorState ==2:
-                    if self.MapType == 0:
-                        col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
-                        SelectedNode = self.Map[row][col]
-                        if (SelectedNode != self.StartNode):
-                            x = self.EndNode.xcoord
-                            y = self.EndNode.ycoord
-                            rect = self.scene.itemAt(x, y, QTransform())
-                            self.scene.removeItem(rect)
-                            x = SelectedNode.xcoord
-                            y = SelectedNode.ycoord
-                            if(SelectedNode.Obstacle==1):
-                                rect = self.scene.itemAt(x, y, QTransform())
-                                self.scene.removeItem(rect)
-                                SelectedNode.Obstacle = 0
-                            rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
-                                          (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
-                            self.scene.addRect(rect, self.red, self.red)
-                            self.EndNode = SelectedNode
-                    else:
-
-                        col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
-
-                        if (col < 1):
-                            col = 1
-                        elif (col > self.GridCells - 1):
-                            col = self.GridCells - 1
-                        if (row < 1):
-                            row = 1
-                        elif (row > self.GridCells - 1):
-                            row = self.GridCells - 1
-
-                        SelectedNode = self.Map[row][col]
-                        if (SelectedNode != self.StartPoint):
-                            self.EndPoint = SelectedNode
-                            x = SelectedNode.xcoord
-                            y = SelectedNode.ycoord
-                            self.scene.removeItem(self.EndShape)
-                            self.EndShape = QGraphicsEllipseItem(x - 5, y - 5, 10, 10)
-                            self.EndShape.setPen(QPen(self.black))
-                            self.EndShape.setBrush(QBrush(self.red, Qt.SolidPattern))
-                            self.scene.addItem(self.EndShape)
-
-
-                elif self.CursorState==3:
+                if self.CursorState ==1: # Place Start
                     col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
+
+                    if(col<1):
+                        col=1
+                    elif (col>self.GridCells-1):
+                        col = self.GridCells-1
+                    if (row<1):
+                        row = 1
+                    elif (row>self.GridCells-1):
+                        row = self.GridCells-1
+
                     SelectedNode = self.Map[row][col]
-                    if(SelectedNode.Obstacle == 0):
-                        SelectedNode.Obstacle = 1
+                    if (SelectedNode != self.EndPoint):
+                        self.StartPoint = SelectedNode
                         x = SelectedNode.xcoord
                         y = SelectedNode.ycoord
-                        rect = QRectF(x-((self.pixelsPerCell/2)-1), y-((self.pixelsPerCell/2)-1), (self.pixelsPerCell-2), (self.pixelsPerCell-2))
-                        self.scene.addRect(rect, self.black, self.black)
-                        self.DrawnObstacles.append(SelectedNode)
+                        self.scene.removeItem(self.StartShape)
+                        self.StartShape = QGraphicsEllipseItem(x-5, y-5, 10, 10)
+                        self.StartShape.setPen(QPen(self.black))
+                        self.StartShape.setBrush(QBrush(self.blue, Qt.SolidPattern))
+                        self.scene.addItem(self.StartShape)
+
+
+                elif self.CursorState ==2: #Place End
+                    col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
+
+                    if (col < 1):
+                        col = 1
+                    elif (col > self.GridCells - 1):
+                        col = self.GridCells - 1
+                    if (row < 1):
+                        row = 1
+                    elif (row > self.GridCells - 1):
+                        row = self.GridCells - 1
+
+                    SelectedNode = self.Map[row][col]
+                    if (SelectedNode != self.StartPoint):
+                        self.EndPoint = SelectedNode
+                        x = SelectedNode.xcoord
+                        y = SelectedNode.ycoord
+                        self.scene.removeItem(self.EndShape)
+                        self.EndShape = QGraphicsEllipseItem(x - 5, y - 5, 10, 10)
+                        self.EndShape.setPen(QPen(self.black))
+                        self.EndShape.setBrush(QBrush(self.red, Qt.SolidPattern))
+                        self.scene.addItem(self.EndShape)
 
                 elif self.CursorState==4:
-                    if self.MapType == 0:
-                        col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
-                        SelectedNode = self.Map[row][col]
-                        if SelectedNode != self.StartNode and SelectedNode != self.EndNode and SelectedNode.Obstacle==1:
-                            SelectedNode.Obstacle = 0
-                            x = SelectedNode.xcoord
-                            y = SelectedNode.ycoord
-                            rect = self.scene.itemAt(x, y, QTransform())
-                            self.scene.removeItem(rect)
-                            self.DrawnObstacles.remove(SelectedNode)
-                    else:
-                        object = self.scene.itemAt(event.scenePos().x(), event.scenePos().y(), QTransform())
-                        if(object!=self.StartShape and object!=self.EndShape):
-                            self.scene.removeItem(object)
+                    print("Removing Object")
+                    object = self.scene.itemAt(event.scenePos().x(), event.scenePos().y(), QTransform())
+                    if(object!=self.StartShape and object!=self.EndShape):
+                        self.scene.removeItem(object)
+
                 elif self.CursorState == 5: #for dragging in a shape
-                    shape = self.MakeShape([int(event.scenePos().x()), int(event.scenePos().y())])
-                    self.scene.addItem(shape)
-                    self.DrawnObstacles.append(Node(event.scenePos().x(), event.scenePos().y(), 1, 1))
+                    print("Adding Shape")
+                    x, y = self.getCellCoord(int(event.scenePos().x()), int(event.scenePos().y()))
+                    shape = self.MakeShape([x, y])
+                    self.scene.addItem(shape.getGuiObject())
+                    self.removeTerrainBehind(shape)
+                    self.DrawnTerrain.append(shape)
+
                     self.bringStartEndToTop()
+
+    def removeTerrainBehind(self, NewTerrain):
+        newTX = NewTerrain.getX()
+        newTY = NewTerrain.getY()
+        print("Length of Terrain List")
+        print(len(self.DrawnTerrain))
+        removalList = []
+        for i in range(0, len(self.DrawnTerrain)):
+            print("loop "+str(i))
+            item = self.DrawnTerrain[i]
+            itemx = item.getX()
+            itemy = item.getY()
+            itemSize = item.getobSize()
+            itemType = item.getShapeType()
+            if itemType == "Circle" and NewTerrain.getShapeType() == "Circle":
+                print("Item is circle")
+                Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
+                print(Dist)
+                print(itemSize)
+                if(self.Size<itemSize):
+                    print("Smaller than other shape")
+                    if (Dist)<(itemSize/2+self.Size/2):
+                        print("Removing item")
+                        removalList.append(item)
+                else:
+                    print("Larger than other shape")
+                    if (Dist)<(self.Size/2+itemSize/2):
+                        print("Removing item")
+                        removalList.append(item)
+        for item in removalList:
+            self.scene.removeItem(item.getGuiObject())
+            self.DrawnTerrain.remove(item)
+
+
     def bringStartEndToTop(self):
         self.scene.removeItem(self.StartShape)
         self.scene.addItem(self.StartShape)
         self.scene.removeItem(self.EndShape)
         self.scene.addItem(self.EndShape)
+
     def MouseMovementEvent(self, event):
         if self.ShapeType != "None" and self.CursorState == 5:
             x = event.scenePos().x()
             y = event.scenePos().y()
-            if (
-                    x < self.Graphicswidth - self.Size / 2 - 25 and x > self.Size / 2 + 25 and y < self.Graphicsheight - self.Size / 2 - 25 and y > self.Size / 2 + 25):
-                self.scene.removeItem(self.TranslatedShape)
-                self.TranslatedShape = self.MakeShape([int(event.scenePos().x()), int(event.scenePos().y())])
-                self.scene.addItem(self.TranslatedShape)
+            x, y = self.getCellCoord(x, y)
+            if x != -1 and y != -1:
+                self.scene.removeItem(self.TranslatedShape.getGuiObject())
+                self.TranslatedShape = self.MakeShape([x, y])
+                self.scene.addItem(self.TranslatedShape.getGuiObject())
             else:
-                self.scene.removeItem(self.TranslatedShape)
+                self.scene.removeItem(self.TranslatedShape.getGuiObject())
 
-    def VerifySize(self):
-        try:
-            self.Size = int(self.SizeEntry.text())
-            if(self.Size>300):
-                self.Size = 300
-                self.SizeEntry.setText("300")
-            self.BuildShape()
-        except ValueError:
-            if self.SizeEntry.text() == "":
-                pass
-            else:
-                self.Size = 10
-                self.SizeEntry.setText("10")
-                self.BuildShape()
 
-        print(self.Size)
-
-    def VerifyAngle(self):
-        try:
-            self.Angle = int(self.AngleEntry.text())
-            if(self.Angle>360):
-                self.Angle = 360
-                self.AngleEntry.setText("360")
-            elif(self.Angle<-360):
-                self.Angle = -360
-                self.AngleEntry.setText("-360")
-            self.BuildShape()
-        except ValueError:
-            if self.AngleEntry.text() == "" or self.AngleEntry.text()=="-":
-                pass
-            else:
-                self.Angle = 0
-                self.AngleEntry.setText("0")
-            self.BuildShape()
-        print(self.Angle)
 
     def makeFieldMap(self):
         self.GridCells = 160
@@ -406,14 +363,9 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def ClearObs(self):
         self.ClearSearch()
-        for item in self.DrawnObstacles:
-            SelectedNode = item
-            SelectedNode.Obstacle = 0
-            x = SelectedNode.xcoord
-            y = SelectedNode.ycoord
-            obj = self.scene.itemAt(x, y, QTransform())
-            self.scene.removeItem(obj)
-        self.DrawnObstacles = []
+        for item in self.DrawnTerrain:
+            self.scene.removeItem(item.getGuiObject())
+        self.DrawnTerrain = []
         self.clearFieldMap()
 
     def AnimatePath(self):
@@ -438,8 +390,8 @@ class SimulationMap(QtWidgets.QMainWindow):
                         rect = QRectF(x - 2, y - 2,
                                       4, 4)
                         self.scene.addRect(rect, self.green, self.green)
-                    if (SelectedNode not in self.DrawnSquares):
-                        self.DrawnSquares.append(SelectedNode)
+                    if (SelectedNode not in self.DrawnTerrain):
+                        self.DrawnTerrain.append(SelectedNode)
                 else:
                     SelectedNode = item
                     x = SelectedNode.xcoord

@@ -295,17 +295,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="SizeEntry"/>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_10">
-       <property name="text">
-        <string>Angle (deg)</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="AngleEntry"/>
+      <widget class="QComboBox" name="SizeEntry"/>
      </item>
     </layout>
    </widget>
