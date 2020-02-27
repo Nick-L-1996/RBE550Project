@@ -7,6 +7,7 @@ As of 2/22/2020 at 12:30 AM, this file can:
 To run the product of this code, navigate to this directory and run: "gazebo  [filename generated]"
 """
 import xml.etree.ElementTree as xml
+import subprocess
 
 class GazeboWorld:  
     def __init__(self):
@@ -118,6 +119,31 @@ class GazeboWorld:
         return world
 
 
+    def shiftSimToGazebo(self, x, y):
+        return [x/7.94 - 50, y/7.94 - 50]
+
+    def makeWorldFromList(self, terrainList):
+        #  For each element in the list
+        for i in range(len(terrainList)):
+        # Grab its shape
+            shape = terrainList[i].getShapeType()
+        # Grab its x, grab its y
+        # Convert X and Y into Gazebo units
+        # place down the shape
+            tilePose = self.shiftSimToGazebo(terrainList[i].getX(), terrainList[i].getY())
+            if(shape == 'Circle'):
+                dim = (terrainList[i].getobSize()/7.94)/2
+            else:
+                dim = (terrainList[i].getobSize() / 7.94)
+            material = terrainList[i].TerrainType
+            name = str(material) + "_" + str(i)
+            self.makeCellTile(tilePose, shape, dim, material, name)
+        print("Generated File")
+        self.writeFile("test_world.world")
+        process = subprocess.Popen(['gazebo', 'test_world.world'],
+                                   stdout=subprocess.PIPE,
+                                   universal_newlines=True)
+
     # add block to gazebo world
     # dim - 1x3 (length,width,height)
     # pos - 1x3 (position) ---> assume not rotated
@@ -131,12 +157,12 @@ class GazeboWorld:
         pass
 
     # make celltile at given position
-    # pose = [x y theta]
+    # pose = [x y]
     # shape = "square"/"s" or "circle"/"c"
-    # dim = sidelen or radius
+    # dim = sidelen or diameter
     # material = "sand", "muddy", "grass", "concrete"
     def makeCellTile(self, pose, shape, dim, material, name):
-        poseString = str(pose[0]) + " " + str(pose[1]) + " " + str(0) + " " + str(0) + " " + str(0) + " " + str(pose[2])
+        poseString = str(pose[0]) + " " + str(pose[1]) + " " + str(0) + " " + str(0) + " " + str(0) + " " + "0"
         model = xml.SubElement(self.world, "model")
         model.set('name', name)
         static1 = xml.SubElement(model, "static")
@@ -162,10 +188,10 @@ class GazeboWorld:
         visual_geometry = xml.SubElement(visual, "geometry")
 
         # check
-        if (shape == 'c' or shape == 'circle'):
+        if (shape == 'c' or shape == 'Circle'):
             self.createCircle(collision_geometry, dim)
             self.createCircle(visual_geometry, dim)
-        elif (shape == 's' or shape == 'square'):
+        elif (shape == 's' or shape == 'Square'):
             self.createSquare(collision_geometry, dim)
             self.createSquare(visual_geometry, dim)
 
@@ -271,7 +297,7 @@ class GazeboWorld:
 
         # https://www.engineeringtoolbox.com/friction-coefficients-d_778.html
         name = xml.SubElement(script, 'name')
-        if terrain == 'grass':
+        if terrain == 'Trees':
             name.text = 'Gazebo/Grass'
             mu.text = '.35'  # from source above
             mu2.text = '.35'
@@ -279,33 +305,33 @@ class GazeboWorld:
             name.text = 'Gazebo/Road'
             mu.text = '.72'  # from source above
             mu2.text = '.72'
-        if terrain == 'pavement':
+        if terrain == 'Concrete':
             name.text = 'Gazebo/Residential'
             mu.text = '.72'  # from source above
             mu2.text = '.72'
-        if terrain == 'mud':
+        if terrain == 'Mud':
             name.text = 'Gazebo/DarkYellow'  # placeholder
             mu.text = '0.158'  # estimation
             mu2.text = '0.158'
-        if terrain == 'water':
+        if terrain == 'Water':
             name.text = 'Gazebo/Blue'  # placeholder
             mu.text = '0.0001'  # estimation
             mu2.text = '0.0001'
 
-world = GazeboWorld()
-world2 = GazeboWorld()
-shape = "square"
-dim = 1
-pose = [0, 0, 0]
-# shape1 = "circle"
-# pose1 = [1.5, 1.5, 0, 0, 0, 0]
-material = "grass"
-name = "morganrosemoroney"
-world.makeCellTile(pose,shape,dim,material,name)
-world.makeCellTile([1, 0, 0],shape,dim,"water",'water')
-# world.makeCellTile(pose1,shape1,dim/2,material,name)
-# world.makeCellTile([2, 2, 0, 0, 0, 0],shape1,dim/2,material,name)
-world.writeFile("test_sphere.world")
-world.writeFile("test_sphere.xml")
-
+# world = GazeboWorld()
+# world2 = GazeboWorld()
+# shape = "square"
+# dim = 1
+# pose = [0, 0, 0]
+# # shape1 = "circle"
+# # pose1 = [1.5, 1.5, 0, 0, 0, 0]
+# material = "grass"
+# name = "morganrosemoroney"
+# world.makeCellTile(pose,shape,dim,material,name)
+# world.makeCellTile([1, 0, 0],shape,dim,"water",'water')
+# # world.makeCellTile(pose1,shape1,dim/2,material,name)
+# # world.makeCellTile([2, 2, 0, 0, 0, 0],shape1,dim/2,material,name)
+# world.writeFile("test_sphere.world")
+# world.writeFile("test_sphere.xml")
+#
 

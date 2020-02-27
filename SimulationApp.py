@@ -7,6 +7,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QPoint
 from PyQt5.QtCore import Qt, QLineF, QRectF
 from TerrainTypes import *
 from Node import Node
+from GazeboWorld import *
 import numpy as np
 designerFile = "MapBuilderGui.ui"
 
@@ -17,6 +18,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         graphicsSize = self.GridView.size()
         self.Graphicswidth = graphicsSize.width() - 50
         self.Graphicsheight = graphicsSize.height() - 50
+        self.GazeboWorld = GazeboWorld()
 
         #connect buttons to functions
         self.StartLocationBTN.clicked.connect(self.ChangeStart)
@@ -33,6 +35,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.SandBTN.clicked.connect(self.SandSelect)
         self.ConcreteBTN.clicked.connect(self.ConcreteSelect)
         self.TreesBTN.clicked.connect(self.TreeSelect)
+        self.GenYAMLBTN.clicked.connect(self.GenerateWorld)
         self.PathAnimationTimer = QtCore.QTimer()
         self.PathAnimationTimer.timeout.connect(self.AnimatePath)
 
@@ -108,6 +111,10 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.CursorState = 5
         if self.ShapeType != None:
             self.BuildShape()
+
+    def GenerateWorld(self):
+        [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
+        self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
 
     def MudSelect(self):
         self.TerrainType = "Mud"
@@ -240,7 +247,6 @@ class SimulationMap(QtWidgets.QMainWindow):
                     self.scene.addItem(shape.getGuiObject())
                     self.removeTerrainBehind(shape)
                     self.DrawnTerrain.append(shape)
-
                     self.bringStartEndToTop()
 
     def removeTerrainBehind(self, NewTerrain):

@@ -1,3 +1,5 @@
+#TODO: Make a class 'Terrain' from which all of these inherit
+
 from PyQt5.QtGui import QPen, QBrush, QColor, qRgb
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsRectItem
 from PyQt5.QtCore import Qt, QPoint
@@ -86,7 +88,7 @@ class Concrete:
     def createGuiObject(self, ShapeType, obSize, Angle, x, y):
         return self.generalTerrain.createGuiObject(ShapeType, obSize, x, y, self.color, self.pattern)
 
-    def getobSize(self):
+    def getObSize(self):
         return self.generalTerrain.obSize
 
 
