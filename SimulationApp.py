@@ -283,11 +283,15 @@ class SimulationMap(QtWidgets.QMainWindow):
                     Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
                     print(Dist)
                     print(itemSize)
-                    if (Dist) < (itemSize / 2 + self.Size / 2+3):  # The 3 is a magic number ;)
+                    if(self.Size==10):
+                        additional = 1
+                    else:
+                        additional = 0
+                    if (Dist) < (itemSize / 2 + self.Size / 2 + additional):  # The 3 is a magic number ;)
                         print("Removing item")
                         removalList.append(item)
             elif itemType == "Square" and NewTerrain.getShapeType() == "Circle":
-                print("Other Item is Circle, new is square")
+                print("Other Item is square, new is circle")
                 if self.Size <= itemSize:
                     xDist = abs(newTX - itemx)
                     yDist = abs(newTY - itemy)
@@ -298,9 +302,15 @@ class SimulationMap(QtWidgets.QMainWindow):
                     Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
                     print(Dist)
                     print(itemSize)
-                    if (Dist) < (itemSize / 2 + self.Size / 2+3):  # The 3 is a magic number ;)
+                    if (self.Size == 160):
+                        additional = 1
+                    else:
+                        additional = 0
+                    if (Dist) < (itemSize / 2 + self.Size / 2 + additional):  # The 3 is a magic number ;)
+
                         print("Removing item")
                         removalList.append(item)
+                    print(itemSize / 2 + self.Size / 2 + additional)
 
         for item in removalList:
             self.scene.removeItem(item.getGuiObject())
