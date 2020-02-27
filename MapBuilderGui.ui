@@ -267,7 +267,7 @@
          <item>
           <widget class="QPushButton" name="GenYAMLBTN">
            <property name="text">
-            <string>Generate YAML</string>
+            <string>Run Gazebo</string>
            </property>
           </widget>
          </item>
