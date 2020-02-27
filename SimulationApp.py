@@ -288,7 +288,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                         removalList.append(item)
             elif itemType == "Square" and NewTerrain.getShapeType() == "Circle":
                 print("Other Item is Circle, new is square")
-                if self.Size < itemSize:
+                if self.Size <= itemSize:
                     xDist = abs(newTX - itemx)
                     yDist = abs(newTY - itemy)
                     if (xDist) < (itemSize / 2 + self.Size / 2) and (yDist) < (itemSize / 2 + self.Size / 2):
