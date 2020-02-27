@@ -257,20 +257,51 @@ class SimulationMap(QtWidgets.QMainWindow):
             itemSize = item.getobSize()
             itemType = item.getShapeType()
             if itemType == "Circle" and NewTerrain.getShapeType() == "Circle":
-                print("Item is circle")
+                print("Items are circles")
                 Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
                 print(Dist)
                 print(itemSize)
-                if(self.Size<itemSize):
-                    print("Smaller than other shape")
-                    if (Dist)<(itemSize/2+self.Size/2):
-                        print("Removing item")
+                if (Dist)<(itemSize/2+self.Size/2):
+                    print("Removing item")
+                    removalList.append(item)
+            elif itemType == "Square" and NewTerrain.getShapeType()== "Square":
+                print("Items are squares")
+                xDist = abs(newTX-itemx)
+                yDist = abs(newTY-itemy)
+                if (xDist) < (itemSize / 2 + self.Size / 2) and (yDist) < (itemSize / 2 + self.Size / 2):
+                    print("Removing Item")
+                    removalList.append(item)
+            elif itemType == "Circle" and NewTerrain.getShapeType()== "Square":
+                print("Other Item is Circle, new is square")
+                if self.Size>itemSize:
+                    xDist = abs(newTX-itemx)
+                    yDist = abs(newTY-itemy)
+                    if (xDist) < (itemSize / 2 + self.Size / 2) and (yDist) < (itemSize / 2 + self.Size / 2):
+                        print("Removing Item")
                         removalList.append(item)
                 else:
-                    print("Larger than other shape")
-                    if (Dist)<(self.Size/2+itemSize/2):
+                    Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
+                    print(Dist)
+                    print(itemSize)
+                    if (Dist) < (itemSize / 2 + self.Size / 2+3):  # The 3 is a magic number ;)
                         print("Removing item")
                         removalList.append(item)
+            elif itemType == "Square" and NewTerrain.getShapeType() == "Circle":
+                print("Other Item is Circle, new is square")
+                if self.Size < itemSize:
+                    xDist = abs(newTX - itemx)
+                    yDist = abs(newTY - itemy)
+                    if (xDist) < (itemSize / 2 + self.Size / 2) and (yDist) < (itemSize / 2 + self.Size / 2):
+                        print("Removing Item")
+                        removalList.append(item)
+                else:
+                    Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
+                    print(Dist)
+                    print(itemSize)
+                    if (Dist) < (itemSize / 2 + self.Size / 2+3):  # The 3 is a magic number ;)
+                        print("Removing item")
+                        removalList.append(item)
+
         for item in removalList:
             self.scene.removeItem(item.getGuiObject())
             self.DrawnTerrain.remove(item)
