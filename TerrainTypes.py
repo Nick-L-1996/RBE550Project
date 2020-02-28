@@ -1,133 +1,6 @@
-#TODO: Make a class 'Terrain' from which all of these inherit
-
 from PyQt5.QtGui import QPen, QBrush, QColor, qRgb
 from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsRectItem
 from PyQt5.QtCore import Qt, QPoint
-
-
-class Water:
-    def __init__(self, obSize, shape, xcoord, ycoord):
-        self.TerrainType = "Water"
-        self.color = QColor(qRgb(0, 255, 255))
-        self.pattern = Qt.SolidPattern
-        self.generalTerrain = GeneralTerrain(obSize, shape, xcoord, ycoord, self.color, self.pattern)
-
-    def createGuiObject(self, ShapeType, obSize, x, y):
-        return self.generalTerrain.createGuiObject(ShapeType, obSize, x, y, self.color, self.pattern)
-
-    def getobSize(self):
-        return self.generalTerrain.obSize
-
-
-    def getShapeType(self):
-        return self.generalTerrain.shapeType
-
-    def getX(self):
-        return self.generalTerrain.x
-
-    def getY(self):
-        return self.generalTerrain.y
-
-    def getGuiObject(self):
-        return self.generalTerrain.GuiObject
-class Mud:
-    def __init__(self, obSize, shape, xcoord, ycoord):
-        self.TerrainType = "Mud"
-        self.color = QColor(qRgb(139,69,19))
-        self.pattern = Qt.Dense2Pattern
-        self.generalTerrain = GeneralTerrain(obSize, shape, xcoord, ycoord, self.color, self.pattern)
-
-
-    def createGuiObject(self, ShapeType, obSize,  x, y):
-        return self.generalTerrain.createGuiObject(ShapeType, obSize,  x, y, self.color, self.pattern)
-    def getobSize(self):
-        return self.generalTerrain.obSize
-    def getShapeType(self):
-        return self.generalTerrain.shapeType
-    def getX(self):
-        return self.generalTerrain.x
-    def getY(self):
-        return self.generalTerrain.y
-    def getGuiObject(self):
-        return self.generalTerrain.GuiObject
-
-
-class Sand:
-    def __init__(self, obSize,  shape, xcoord, ycoord):
-        self.TerrainType = "Sand"
-        self.color = QColor(qRgb(244, 164, 96))
-        self.pattern = Qt.Dense4Pattern
-        self.generalTerrain = GeneralTerrain(obSize, shape, xcoord, ycoord, self.color, self.pattern)
-
-    def createGuiObject(self, ShapeType, obSize, x, y):
-        return self.generalTerrain.createGuiObject(ShapeType, obSize, x, y, self.color, self.pattern)
-
-    def getobSize(self):
-        return self.generalTerrain.obSize
-
-
-    def getShapeType(self):
-        return self.generalTerrain.shapeType
-
-    def getX(self):
-        return self.generalTerrain.x
-
-    def getY(self):
-        return self.generalTerrain.y
-
-    def getGuiObject(self):
-        return self.generalTerrain.GuiObject
-
-class Concrete:
-    def __init__(self, obSize, shape, xcoord, ycoord):
-        self.TerrainType = "Concrete"
-        self.color = QColor(qRgb(224, 224, 224))
-        self.pattern = Qt.Dense1Pattern
-        self.generalTerrain = GeneralTerrain(obSize, shape, xcoord, ycoord, self.color, self.pattern)
-
-    def createGuiObject(self, ShapeType, obSize, Angle, x, y):
-        return self.generalTerrain.createGuiObject(ShapeType, obSize, x, y, self.color, self.pattern)
-
-    def getObSize(self):
-        return self.generalTerrain.obSize
-
-
-    def getShapeType(self):
-        return self.generalTerrain.shapeType
-
-    def getX(self):
-        return self.generalTerrain.x
-
-    def getY(self):
-        return self.generalTerrain.y
-
-    def getGuiObject(self):
-        return self.generalTerrain.GuiObject
-
-class Trees:
-    def __init__(self, obSize, shape, xcoord, ycoord):
-        self.TerrainType = "Trees"
-        self.color = QColor(qRgb(0, 204, 0))
-        self.pattern = Qt.DiagCrossPattern
-        self.generalTerrain = GeneralTerrain(obSize, shape, xcoord, ycoord, self.color, self.pattern)
-
-    def createGuiObject(self, ShapeType, obSize, Angle, x, y):
-        return self.generalTerrain.createGuiObject(ShapeType, obSize, x, y, self.color, self.pattern)
-
-    def getobSize(self):
-        return self.generalTerrain.obSize
-
-    def getShapeType(self):
-        return self.generalTerrain.shapeType
-
-    def getX(self):
-        return self.generalTerrain.x
-
-    def getY(self):
-        return self.generalTerrain.y
-
-    def getGuiObject(self):
-        return self.generalTerrain.GuiObject
 
 class GeneralTerrain:
     def __init__(self, obSize, shape, xcoord, ycoord, color, pattern):
@@ -152,3 +25,55 @@ class GeneralTerrain:
         self.y = y
         self.shapeType = ShapeType
         return shape
+
+    def getobSize(self):
+        return self.obSize
+
+    def getShapeType(self):
+        return self.shapeType
+
+    def getX(self):
+        return self.x
+
+    def getY(self):
+        return self.y
+
+    def getGuiObject(self):
+        return self.GuiObject
+
+class Water(GeneralTerrain):
+    def __init__(self, obSize, shape, xcoord, ycoord):
+        self.pattern = Qt.SolidPattern
+        self.color = QColor(qRgb(0, 255, 255))
+        super().__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+        self.TerrainType = "Water"
+
+class Mud(GeneralTerrain):
+    def __init__(self, obSize, shape, xcoord, ycoord):
+        self.TerrainType = "Mud"
+        self.color = QColor(qRgb(139,69,19))
+        self.pattern = Qt.Dense2Pattern
+        super().__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+
+class Sand(GeneralTerrain):
+    def __init__(self, obSize,  shape, xcoord, ycoord):
+        self.TerrainType = "Sand"
+        self.color = QColor(qRgb(244, 164, 96))
+        self.pattern = Qt.Dense4Pattern
+        super().__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+
+class Concrete(GeneralTerrain):
+    def __init__(self, obSize, shape, xcoord, ycoord):
+        self.TerrainType = "Concrete"
+        self.color = QColor(qRgb(224, 224, 224))
+        self.pattern = Qt.Dense1Pattern
+        super().__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+
+class Trees(GeneralTerrain):
+    def __init__(self, obSize, shape, xcoord, ycoord):
+        self.TerrainType = "Trees"
+        self.color = QColor(qRgb(0, 204, 0))
+        self.pattern = Qt.DiagCrossPattern
+        super(Trees, self).__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+
+
