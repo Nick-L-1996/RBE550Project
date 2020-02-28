@@ -31,7 +31,7 @@
     <property name="geometry">
      <rect>
       <x>1040</x>
-      <y>20</y>
+      <y>200</y>
       <width>241</width>
       <height>31</height>
      </rect>
@@ -87,58 +87,11 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="verticalLayoutWidget_4">
-    <property name="geometry">
-     <rect>
-      <x>960</x>
-      <y>180</y>
-      <width>411</width>
-      <height>91</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="verticalLayout_4">
-     <item>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="3" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Grid Cell Dimension</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="CellSizeSelect"/>
-         </item>
-        </layout>
-       </item>
-       <item row="3" column="2">
-        <widget class="QPushButton" name="addObjectBTN">
-         <property name="text">
-          <string>Add Object</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QPushButton" name="delObjectBTN">
-         <property name="text">
-          <string>Delete Object</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-    </layout>
-   </widget>
    <widget class="QWidget" name="horizontalLayoutWidget_5">
     <property name="geometry">
      <rect>
       <x>960</x>
-      <y>80</y>
+      <y>250</y>
       <width>411</width>
       <height>51</height>
      </rect>
@@ -234,10 +187,10 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit"/>
+          <widget class="QComboBox" name="LoadCombo"/>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_3">
+          <widget class="QPushButton" name="loadBTN">
            <property name="text">
             <string>Load</string>
            </property>
@@ -330,13 +283,6 @@
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_8">
-     <item>
-      <widget class="QLabel" name="label_9">
-       <property name="text">
-        <string>Size (px)</string>
-       </property>
-      </widget>
-     </item>
      <item>
       <widget class="QComboBox" name="SizeEntry"/>
      </item>

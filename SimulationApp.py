@@ -9,6 +9,8 @@ from TerrainTypes import *
 from Node import Node
 from GazeboWorld import *
 import numpy as np
+import pickle
+import os
 designerFile = "MapBuilderGui.ui"
 
 class SimulationMap(QtWidgets.QMainWindow):
@@ -23,8 +25,6 @@ class SimulationMap(QtWidgets.QMainWindow):
         #connect buttons to functions
         self.StartLocationBTN.clicked.connect(self.ChangeStart)
         self.selectEndBTN.clicked.connect(self.ChangeEnd)
-        self.addObjectBTN.clicked.connect(self.addObstacle)
-        self.delObjectBTN.clicked.connect(self.removeObstacle)
         self.DeleteShapeBTN.clicked.connect(self.removeObstacle)
         self.ClearCursorBTN.clicked.connect(self.DoneMapEditor)
         self.ClearObjectsBTN.clicked.connect(self.ClearObs)
@@ -36,8 +36,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.ConcreteBTN.clicked.connect(self.ConcreteSelect)
         self.TreesBTN.clicked.connect(self.TreeSelect)
         self.GenYAMLBTN.clicked.connect(self.GenerateWorld)
-        self.PathAnimationTimer = QtCore.QTimer()
-        self.PathAnimationTimer.timeout.connect(self.AnimatePath)
+        self.SaveTerrainBTN.clicked.connect(self.saveMap)
+        self.loadBTN.clicked.connect(self.loadMap)
 
         self.SizeEntry.addItem("Tiny")
         self.SizeEntry.addItem("Small")
@@ -73,8 +73,45 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.yellow = QColor(qRgb(255, 255, 0))
         self.purple = QColor(qRgb(238, 130, 238))
         self.magenta = QColor(qRgb(255, 0, 255))
-
         self.makeFieldMap()
+        self.MapNames = []
+        self.listMaps()
+
+    def listMaps(self):
+        self.LoadCombo.clear()
+        if os.path.exists("MapBuilderMaps"):
+            print("Found Directory")
+            for file in os.listdir("MapBuilderMaps"):
+                if file.endswith(".mb"):
+                    self.MapNames.append(file)
+                    self.LoadCombo.addItem(file)
+        else:
+            print("Making Directory")
+            os.mkdir("MapBuilderMaps")
+
+    def saveMap(self):
+        name = self.SaveNameEntry.text()
+        if name !="":
+            with open("MapBuilderMaps/"+name+".mb", 'wb') as saveLocation:
+                copy = self.DrawnTerrain.copy()
+                for item in copy:
+                    item.clearGuiObject()
+                pickle.dump(copy, saveLocation)
+            print("Saved Map")
+        self.listMaps()
+
+    def loadMap(self):
+        text = self.LoadCombo.currentText()
+        if(text != ""):
+            for item in self.DrawnTerrain:
+                self.scene.removeItem(item.getGuiObject())
+            with open("MapBuilderMaps/"+ text, 'rb') as file:
+                temp = pickle.load(file)
+                for item in temp:
+                    item.recreateGuiObject()
+                    self.DrawnTerrain.append(item)
+            for item in self.DrawnTerrain:
+                self.scene.addItem(item.getGuiObject())
 
     def SizeSelectChange(self):
         text = self.SizeEntry.currentText()
@@ -88,15 +125,14 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.Size = 80
         elif text == "Very Large":
             self.Size = 160
-        self.BuildShape()
+        if self.ShapeType!="None":
+            self.BuildShape()
 
     def ClearSearch(self):
         print("Clearing Search")
         self.StatusLabel.setText("Status: Ready")
         self.scene.removeItem(self.StartShape)
         self.scene.removeItem(self.EndShape)
-        self.PathAnimationTimer.stop()
-        time.sleep(0.1)
         self.NumExpLBL.setText("# Expansions: 0")
         self.Path = []
         self.clearFieldMap()
@@ -175,7 +211,8 @@ class SimulationMap(QtWidgets.QMainWindow):
             CurrentTerrainObject = Sand(self.Size, self.ShapeType, origin[0], origin[1])
         elif self.TerrainType == "Tree":
             CurrentTerrainObject = Trees(self.Size, self.ShapeType, origin[0], origin[1])
-
+        else:
+            CurrentTerrainObject = Trees(self.Size, self.ShapeType, origin[0], origin[1])
         return CurrentTerrainObject
 
     def mapClickEventHandler(self, event):
@@ -235,13 +272,15 @@ class SimulationMap(QtWidgets.QMainWindow):
                         self.scene.addItem(self.EndShape)
 
                 elif self.CursorState==4:
-                    print("Removing Object")
                     object = self.scene.itemAt(event.scenePos().x(), event.scenePos().y(), QTransform())
                     if(object!=self.StartShape and object!=self.EndShape):
-                        self.scene.removeItem(object)
+                        for item in self.DrawnTerrain:
+                            if item.getGuiObject() == object:
+                                self.DrawnTerrain.remove(item)
+                                self.scene.removeItem(object)
+                                break
 
                 elif self.CursorState == 5: #for dragging in a shape
-                    print("Adding Shape")
                     x, y = self.getCellCoord(int(event.scenePos().x()), int(event.scenePos().y()))
                     shape = self.MakeShape([x, y])
                     self.scene.addItem(shape.getGuiObject())
@@ -263,65 +302,46 @@ class SimulationMap(QtWidgets.QMainWindow):
             itemSize = item.getobSize()
             itemType = item.getShapeType()
             if itemType == "Circle" and NewTerrain.getShapeType() == "Circle":
-                print("Items are circles")
                 Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
-                print(Dist)
-                print(itemSize)
                 if (Dist)<(itemSize/2+self.Size/2):
-                    print("Removing item")
                     removalList.append(item)
             elif itemType == "Square" and NewTerrain.getShapeType()== "Square":
-                print("Items are squares")
                 xDist = abs(newTX-itemx)
                 yDist = abs(newTY-itemy)
                 if (xDist) < (itemSize / 2 + self.Size / 2) and (yDist) < (itemSize / 2 + self.Size / 2):
-                    print("Removing Item")
                     removalList.append(item)
             elif itemType == "Circle" and NewTerrain.getShapeType()== "Square":
-                print("Other Item is Circle, new is square")
                 if self.Size>=itemSize:
                     xDist = abs(newTX-itemx)
                     yDist = abs(newTY-itemy)
                     if (xDist) < (itemSize / 2 + self.Size / 2) and (yDist) < (itemSize / 2 + self.Size / 2):
-                        print("Removing Item")
                         removalList.append(item)
                 else:
                     Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
-                    print(Dist)
-                    print(itemSize)
                     if(self.Size==10):
                         additional = 1
                     else:
                         additional = 0
                     if (Dist) < (itemSize / 2 + self.Size / 2 + additional):  # The 3 is a magic number ;)
-                        print("Removing item")
                         removalList.append(item)
             elif itemType == "Square" and NewTerrain.getShapeType() == "Circle":
-                print("Other Item is square, new is circle")
                 if self.Size <= itemSize:
                     xDist = abs(newTX - itemx)
                     yDist = abs(newTY - itemy)
                     if (xDist) < (itemSize / 2 + self.Size / 2) and (yDist) < (itemSize / 2 + self.Size / 2):
-                        print("Removing Item")
                         removalList.append(item)
                 else:
                     Dist = np.sqrt(np.power(newTX - itemx, 2) + np.power(newTY - itemy, 2))
-                    print(Dist)
-                    print(itemSize)
                     if (self.Size == 160):
                         additional = 1
                     else:
                         additional = 0
                     if (Dist) < (itemSize / 2 + self.Size / 2 + additional):  # The 3 is a magic number ;)
-
-                        print("Removing item")
                         removalList.append(item)
-                    print(itemSize / 2 + self.Size / 2 + additional)
 
         for item in removalList:
             self.scene.removeItem(item.getGuiObject())
             self.DrawnTerrain.remove(item)
-
 
     def bringStartEndToTop(self):
         self.scene.removeItem(self.StartShape)
@@ -340,8 +360,6 @@ class SimulationMap(QtWidgets.QMainWindow):
                 self.scene.addItem(self.TranslatedShape.getGuiObject())
             else:
                 self.scene.removeItem(self.TranslatedShape.getGuiObject())
-
-
 
     def makeFieldMap(self):
         self.GridCells = 160
@@ -396,9 +414,6 @@ class SimulationMap(QtWidgets.QMainWindow):
     def ChangeEnd(self):
         self.CursorState = 2
 
-    def addObstacle(self):
-        self.CursorState = 3
-
     def removeObstacle(self):
         self.CursorState = 4
 
@@ -409,78 +424,19 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.ShapeMakerView.setScene(self.sceneShape)
 
     def ClearObs(self):
+        print("Clearing objects")
         self.ClearSearch()
         for item in self.DrawnTerrain:
             self.scene.removeItem(item.getGuiObject())
         self.DrawnTerrain = []
         self.clearFieldMap()
 
-    def AnimatePath(self):
-        if(len(self.Path)>1200):
-            pass
-        else:
-            pathIndex = 0
-            LightIt = 0
-            for item in self.Path:
-                if(pathIndex<self.PathState):
-                    SelectedNode = item
-                    x = SelectedNode.xcoord
-                    y = SelectedNode.ycoord
-                    rect = self.scene.itemAt(x, y, QTransform())
-                    self.scene.removeItem(rect)
-
-                    if(self.MapType==0):
-                        rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
-                                      (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
-                        self.scene.addRect(rect, self.purple, self.purple)
-                    else:
-                        rect = QRectF(x - 2, y - 2,
-                                      4, 4)
-                        self.scene.addRect(rect, self.green, self.green)
-                    if (SelectedNode not in self.DrawnTerrain):
-                        self.DrawnTerrain.append(SelectedNode)
-                else:
-                    SelectedNode = item
-                    x = SelectedNode.xcoord
-                    y = SelectedNode.ycoord
-                    #removes twice to be safe
-                    rect = self.scene.itemAt(x, y, QTransform())
-                    self.scene.removeItem(rect)
-                    rect = self.scene.itemAt(x, y, QTransform())
-                    self.scene.removeItem(rect)
-
-                    if (LightIt==0):
-                        if(self.MapType ==0):
-                            rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
-                                          (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
-                            self.scene.addRect(rect, self.magenta, self.magenta)
-                        else:
-                            rect = QRectF(x - 2, y - 2,
-                                          4, 4)
-                            self.scene.addRect(rect, self.Orange, self.Orange)
-                        LightIt+=1
-                    else:
-                        if(self.MapType == 0):
-                            rect = QRectF(x - ((self.pixelsPerCell / 2) - 1), y - ((self.pixelsPerCell / 2) - 1),
-                                          (self.pixelsPerCell - 2), (self.pixelsPerCell - 2))
-                            self.scene.addRect(rect, self.purple, self.purple)
-                        else:
-                            rect = QRectF(x - 2, y - 2,
-                                          4, 4)
-                            self.scene.addRect(rect, self.green, self.green)
-                        LightIt += 1
-                        if(LightIt==20):
-                            LightIt=0
-                pathIndex+=1
-            self.PathState+=1
-            if(self.PathState==20):
-                self.PathState = 0
-
     def clearFieldMap(self):
         for item in self.fieldObstacleList:
             Shape = self.scene.itemAt(item.xcoord, item.ycoord, QTransform())
             self.scene.removeItem(Shape)
         self.fieldObstacleList = []
+
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
 

@@ -8,7 +8,10 @@ class GeneralTerrain:
         self.shapeType = shape
         self.x = xcoord
         self.y = ycoord
-        self.GuiObject = self.createGuiObject(self.shapeType, self.obSize, self.x, self.y, color, pattern)
+        self.pattern = pattern
+        self.color = color
+        self.GuiObject = self.createGuiObject(self.shapeType, self.obSize, self.x, self.y, self.color, self.pattern)
+
 
     def createGuiObject(self, ShapeType, obSize, x, y, color, pattern):
         shape = None
@@ -40,6 +43,12 @@ class GeneralTerrain:
 
     def getGuiObject(self):
         return self.GuiObject
+
+    def clearGuiObject(self):
+        self.GuiObject = None
+
+    def recreateGuiObject(self):
+        self.GuiObject = self.createGuiObject(self.shapeType, self.obSize, self.x, self.y, self.color, self.pattern)
 
 class Water(GeneralTerrain):
     def __init__(self, obSize, shape, xcoord, ycoord):
