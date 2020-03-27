@@ -151,6 +151,11 @@ class SimulationMap(QtWidgets.QMainWindow):
     def GenerateWorld(self):
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
         self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
+        self.generateNodeMap(20, 80) #Populates Map
+        for row in self.Map:
+            for col in row:
+                print(col.Environment, end=" ")
+            print(",")
 
     def MudSelect(self):
         self.TerrainType = "Mud"
@@ -436,6 +441,26 @@ class SimulationMap(QtWidgets.QMainWindow):
             Shape = self.scene.itemAt(item.xcoord, item.ycoord, QTransform())
             self.scene.removeItem(Shape)
         self.fieldObstacleList = []
+
+    def generateNodeMap(self, size, numCells):# make num cells 80 for simplicity and prevent loss of map details, do not exceed grid cell size 160
+        self.Map = []
+        for i in range(0, numCells):
+            row = []
+            for j in range(0, numCells):
+                row.append(Node(j*size+size/2, i*size+size/2, i, j))
+            self.Map.append(row)
+
+        cellSizePixel = int(self.Graphicsheight / numCells)
+        for i in range(0, numCells):
+            for j in range(0, numCells):
+                x = j * cellSizePixel + cellSizePixel/2
+                y = i * cellSizePixel + cellSizePixel/2
+                Shape = self.scene.itemAt(x, y, QTransform())
+                if (Shape != None ):
+                    for item in self.DrawnTerrain:
+                        if item.getGuiObject() == Shape:
+                            self.Map[i][j].Environment = item.TerrainType
+                            break
 
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')

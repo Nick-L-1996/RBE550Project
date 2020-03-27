@@ -140,9 +140,12 @@ class GazeboWorld:
             self.makeCellTile(tilePose, shape, dim, material, name)
         print("Generated File")
         self.writeFile("test_world.world")
-        process = subprocess.Popen(['gazebo', 'test_world.world'],
+        try:
+            process = subprocess.Popen(['gazebo', 'test_world.world'],
                                    stdout=subprocess.PIPE,
                                    universal_newlines=True)
+        except:
+            print("Gazebo Not Installed")
 
     # add block to gazebo world
     # dim - 1x3 (length,width,height)

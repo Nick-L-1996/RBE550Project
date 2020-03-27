@@ -10,6 +10,7 @@ class GeneralTerrain:
         self.y = ycoord
         self.pattern = pattern
         self.color = color
+        self.TerrainType = "None"
         self.GuiObject = self.createGuiObject(self.shapeType, self.obSize, self.x, self.y, self.color, self.pattern)
 
 
@@ -59,30 +60,34 @@ class Water(GeneralTerrain):
 
 class Mud(GeneralTerrain):
     def __init__(self, obSize, shape, xcoord, ycoord):
-        self.TerrainType = "Mud"
+
         self.color = QColor(qRgb(139,69,19))
         self.pattern = Qt.Dense2Pattern
         super().__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+        self.TerrainType = "Mud"
 
 class Sand(GeneralTerrain):
     def __init__(self, obSize,  shape, xcoord, ycoord):
-        self.TerrainType = "Sand"
+
         self.color = QColor(qRgb(244, 164, 96))
         self.pattern = Qt.Dense4Pattern
         super().__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+        self.TerrainType = "Sand"
 
 class Concrete(GeneralTerrain):
     def __init__(self, obSize, shape, xcoord, ycoord):
-        self.TerrainType = "Concrete"
+
         self.color = QColor(qRgb(224, 224, 224))
         self.pattern = Qt.Dense1Pattern
         super().__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+        self.TerrainType = "Concrete"
 
 class Trees(GeneralTerrain):
     def __init__(self, obSize, shape, xcoord, ycoord):
-        self.TerrainType = "Trees"
+
         self.color = QColor(qRgb(0, 204, 0))
         self.pattern = Qt.DiagCrossPattern
         super(Trees, self).__init__(obSize, shape, xcoord, ycoord, self.color, self.pattern)
+        self.TerrainType = "Trees"
 
 

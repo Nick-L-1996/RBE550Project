@@ -7,5 +7,5 @@ class Node:
         self.parent = None
         self.totalCost = 10000000000
         self.Heuristic = 10000000000
-        self.Environment = None
+        self.Environment = "None"
         self.cost = None
