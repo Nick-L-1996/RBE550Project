@@ -8,8 +8,9 @@ from PyQt5.QtCore import Qt, QLineF, QRectF
 from TerrainTypes import *
 from Node import Node
 from GazeboWorld import *
-import numpy as np
+import numpy as np  
 import pickle
+from SMHAStar import *
 import os
 designerFile = "MapBuilderGui.ui"
 
@@ -38,6 +39,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.GenYAMLBTN.clicked.connect(self.GenerateWorld)
         self.SaveTerrainBTN.clicked.connect(self.saveMap)
         self.loadBTN.clicked.connect(self.loadMap)
+        self.RunBTN.clicked.connect(self.runAlg)
 
         self.SizeEntry.addItem("Tiny")
         self.SizeEntry.addItem("Small")
@@ -76,6 +78,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.makeFieldMap()
         self.MapNames = []
         self.listMaps()
+        self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
 
     def listMaps(self):
         self.LoadCombo.clear()
@@ -88,6 +91,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         else:
             print("Making Directory")
             os.mkdir("MapBuilderMaps")
+
+    def runAlg(self):
 
     def saveMap(self):
         name = self.SaveNameEntry.text()
@@ -203,6 +208,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             row = int(Y/self.Size)
             y = row * self.Size + self.Size / 2 - 1
         return x, y
+
 
     def MakeShape(self, origin):
 

@@ -1,48 +1,58 @@
+from Scheduler import *
 class SMHAStar:
-    def __init__(self):
+    #self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
+    def __init__(self, map, start, end, scheduler = "EISMHA"):
         self.visited = []
         self.unVisited = []
         self.finalPath = []
-        self.startNode = None
-        self.endNode = None
+        self.startNode = start
+        self.endNode = end
         self.foundGoal = False
         # Need world or graph object from GUI
-        self.graph = None
+        self.graph = map
         #scheduler goes here
-        self.scheduler = None
+        self.scheduler = getScheduler(scheduler)
         pass
+
+
+    # Returns a scheduler corresponding to input
+    def getScheduler(scheduler):
+        if scheduler == "Round Robin":
+            return RR_Scheduler()
+        elif scheduler == "DTS":
+            return DTS_Scheduler()
+
+        return EISMHA_Scheduler()
 
 
     def run(self):
-        """
-        Pseudo Code (according to the Paper):
-            remove s from open list
-            v(s) = g(s)
-            for all s' Succ do
-            if s'was never generated then
-            g(s') = ∞; bp(s') = null
-            v(s') = ∞.
-            if g(s') > g(s) + c(s, s') then
-            g(s') = g(s) + c(s, s'); bp(s') = s
+        # add start to open set
+        self.unVisiting.append(self.startNode)
+        # while open is not empty or the goal not found, keep searching
+        while (self.foundGoal != True or len(self.unVisited) != 0)
 
-            if s' ∈ / CLOSEDanchor then
-            Insert / Update s' in OPEN0 with Key(s', 0)
-            if s' ∈ / CLOSEDinad then
+        #curr current node  from un top ofopen set
+            currentNode = self.unVisited.pop(0)
 
-            for i = 1, 2, ..., n do
-                if Key(s', i) ≤ w2 ∗ Key(s', 0) then
-                Insert / Update s' in OPENi with Key(s', i)
+            # if the current node is the end, then break to return path
+            if currentNode == self.endNode:
+                print ("found goal")
+                self.foundGoal = True
+                break
+            
+            # we have visited the current node
+            self.visited.append(currentNode)
 
-         @RICH I didn't REALLY follow the pseudo-code itself (as written) from the paper, but this is how I understood it:
-             1) put start node in unvisited and pop off the unvisited list
-             2) current node = popped off node
-             3) at current node, have scheduler determine next best node to go
-             4) add current node to visited
-             5) add next node to the unvisited list, and sort the list by total cost (h + g)
-             6) Go to step 2
-        """
+            # updated unVisited queue with unvisited queue and cost of neighbors
+            # sort unvisited queue by total cost
+            currentNodeNeigbors = scheduler.updateUnvisitedQueue(currentNode, self.visited, self.unVisited)
+        
+        if(self.foundGoal):
+            #Determine final path, by backtracking to source
+            #return final path
+            pass
+        
+        else:
+            print("Could not find goal node!")
+        
         pass
-#
-#     def Key(selfs, i):
-#         pass
-#         #return g(s)+w1*hi(s)
