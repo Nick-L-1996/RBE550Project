@@ -1,56 +1,51 @@
 from Scheduler import *
 class RR_Scheduler(Scheduler):
-    def __init__(self, graph):
-        super().__init__(graph)
+    def __init__(self, map):
+        super().__init__(map)
         pass
 
-
-        """
-         @RICH I didn't REALLY follow the pseudo-code itself (as written) from the paper, but this is how I understood it:
-             1) put start node in unvisited and pop off the unvisited list
-             2) current node = popped off node
-             3) at current node, have scheduler determine next best node to go
-             4) rewire the nodes parent if necessary
-             5) add current node to visited
-             6) add next node to the unvisited list, and sort the list by total cost (h + g)
-             7) Go to step 2
-        """
     #OVERLOADED FUNCTION
-    def updateUnvisitedQueue(self, currentNode, visited, unvisited):
+    def updateUnvisitedQueue(self, currentNode, visited, unvisited, endNode):
+        
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
         
+        print("Current Node:", currentNode.row, currentNode.column)
         # get unexplored neighbors
-
-        
+        # for every neighbor find the lowest value across all heuristics
         for neighbor in neighbors:
-            for heuristic in heuristics:
+            print("Neighbor Node:", neighbor.row, neighbor.column)
+            
+            # if this neighbor was marked as visited
+            if(neighbor in visited):
+                continue
 
-                # get the edge cost between the current node and neighbor
-                edgeCost = self.getEdgeCost(currentNode,neighbor)
-
-                # get the hueristic value between the current node and the neighbor
-                heuristicCost = self.getHeuristic(currentNode,neighbor)
+            # check a neighbor with all heuristics
+            for heuristic_type in self.heuristicGetters.keys():
                 
+                # get the edge cost between the current node and neighbor
+                edgeCost = self.getEdgeCost(currentNode, neighbor)
+                print("Edge Cost:", edgeCost)
+
+                # get the hueristic value between the current node and the neighbor using specific hueristic and end goal
+                heuristicCost = self.getHeuristicValue(heuristic_type, currentNode, neighbor, endNode)
+                print("Heuristic Cost:", heuristic_type, heuristicCost)
+
                 # calculate the would be cost to travel from current node to neighbor
                 tempCost = edgeCost + heuristicCost
 
-                # if new path cost is cheaper than another current path cost to get to neighbor, update neighbor cost
-                if tempCost < neighbor.cost:
-                    neighbor.cost = tempCost
-                
-                
-        
+                # if new temp path cost is cheaper than another current path cost to get to neighbor, update neighbor cost
+                if tempCost < neighbor.totalCost:
+                    neighbor.totalCost = tempCost
+                    # we need to set the new parent if the cost has changed
+                    neighbor.parent = currentNode
 
+                # if neighbor is not in the unvisited list, add it to unvisited
+                if (neighbor not in unvisited):
+                    unvisited.append(neighbor)
 
-        # keep track of cheapest node
-        # for each of the neighbors
-        # for each heuristic:
-        # calculate edge-cost
-        # calculate heuristic
-        # cost = edge-cost + heuristic
-        # if cost cheaper than cheapest
-        # new cheapest node found
+        # sort nodes in unvisited by their cost
+        unvisited.sort(key=lambda x: x.totalCost)
 
-        
-        pass
+        # return updated unvisited (open list)
+        return unvisited

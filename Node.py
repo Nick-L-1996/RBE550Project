@@ -10,3 +10,10 @@ class Node:
         self.Environment = "None"
         self.cost = None
         self.RobotDirection = None # Need this to determine if the robot is turning or not for mud heuristic
+
+    def isInList(self, nodeList):
+        inListFlag = False
+        for node in nodeList:
+            if (node.xcoord == self.xcoord) and (node.xcoord == self.ycoord):
+                inListFlag = True
+        return inListFlag

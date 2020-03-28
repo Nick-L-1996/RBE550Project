@@ -80,6 +80,9 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.listMaps()
         self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
 
+        #List of algorithms
+        self.Algorithms = [self.Algorithm_RR]
+
     def listMaps(self):
         self.LoadCombo.clear()
         if os.path.exists("MapBuilderMaps"):
@@ -93,6 +96,14 @@ class SimulationMap(QtWidgets.QMainWindow):
             os.mkdir("MapBuilderMaps")
 
     def runAlg(self):
+        #run SMHA* with RR scheduler
+        self.Algorithm_RR.run()
+    
+    # Update the start and end for all the algorithms when you change the start or end
+    def updateStartEndForAlgs(self):
+        for alg in self.Algorithms:
+            alg.endNode = self.EndPoint
+            alg.start = self.StartPoint
 
     def saveMap(self):
         name = self.SaveNameEntry.text()
@@ -257,6 +268,8 @@ class SimulationMap(QtWidgets.QMainWindow):
                         self.StartShape.setPen(QPen(self.black))
                         self.StartShape.setBrush(QBrush(self.blue, Qt.SolidPattern))
                         self.scene.addItem(self.StartShape)
+                        # Update the start and end node for the Algorithms 
+                        self.updateStartEndForAlgs()
 
 
                 elif self.CursorState ==2: #Place End
@@ -274,6 +287,8 @@ class SimulationMap(QtWidgets.QMainWindow):
                     SelectedNode = self.Map[row][col]
                     if (SelectedNode != self.StartPoint):
                         self.EndPoint = SelectedNode
+                        # print("SELETED NEW END HERE")
+                        # print(self.EndPoint.row, self.EndPoint.column)
                         x = SelectedNode.xcoord
                         y = SelectedNode.ycoord
                         self.scene.removeItem(self.EndShape)
@@ -281,6 +296,8 @@ class SimulationMap(QtWidgets.QMainWindow):
                         self.EndShape.setPen(QPen(self.black))
                         self.EndShape.setBrush(QBrush(self.red, Qt.SolidPattern))
                         self.scene.addItem(self.EndShape)
+                        # Update the start and end node for the Algorithms 
+                        self.updateStartEndForAlgs()
 
                 elif self.CursorState==4:
                     object = self.scene.itemAt(event.scenePos().x(), event.scenePos().y(), QTransform())
@@ -298,6 +315,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                     self.removeTerrainBehind(shape)
                     self.DrawnTerrain.append(shape)
                     self.bringStartEndToTop()
+
 
     def removeTerrainBehind(self, NewTerrain):
         newTX = NewTerrain.getX()
