@@ -9,3 +9,4 @@ class Node:
         self.Heuristic = 10000000000
         self.Environment = "None"
         self.cost = None
+        self.RobotDirection = None # Need this to determine if the robot is turning or not for mud heuristic
