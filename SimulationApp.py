@@ -483,7 +483,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                 if (Shape != None ):
                     for item in self.DrawnTerrain:
                         if item.getGuiObject() == Shape:
-                            self.Map[i][j].Environment = item.TerrainType
+                            self.Map[i][j].setEnvironmentType(item.TerrainType)
                             break
 
 class AlgorithmThread(QThread):
