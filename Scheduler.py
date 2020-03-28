@@ -11,7 +11,7 @@ class Scheduler:
         ## Data Structure for Heuristic Value getters
         self.heuristicGetters = {
             "Water": heuristicWater(),
-            #"Mud": heuristicMud(),
+            "Mud": heuristicMud(),
             "Concrete": heuristicConcrete(),
             "Trees": heuristicTrees(),
             "Sand": heuristicSand()

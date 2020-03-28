@@ -5,13 +5,13 @@ class heuristic:
     def getHeuristic(self, CurrentNode, NodeToBeExplored, EndNode):
         return 0
 
-## TODO ERROR WHEN RUNNING
 class heuristicMud(heuristic): #High cost for making turns
     def getHeuristic(self, CurrentNode, NodeToBeExplored, EndNode):
+
+        #calculate if the current direction of the robot is the same as the movement to explore a frontier node
         directionVector1 = np.array(CurrentNode.RobotDirection)
         directionVector2 = np.array([NodeToBeExplored.xcoord-CurrentNode.xcoord, NodeToBeExplored.ycoord-CurrentNode.ycoord])
-        print(directionVector1.shape, directionVector2.shape)
-        VectorInSameDirection = np.dot(directionVector1, directionVector2)
+        VectorInSameDirection = np.dot(directionVector1, directionVector2) # if dot product is 1 then the robot is staying straight
         cost = np.sqrt(
             np.power(EndNode.xcoord - NodeToBeExplored.xcoord, 2) + np.power(EndNode.ycoord - NodeToBeExplored.ycoord, 2))
         if VectorInSameDirection == 1.0:
