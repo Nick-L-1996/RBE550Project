@@ -58,7 +58,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.CursorState = 0
         self.StartShape = None
         self.EndShape = None
-        self.Map = []
+        self.MapGui = []
+        self.MapNode = []
         self.DrawnTerrain = []
         self.fieldObstacleList = []
         self.SimRunning = False
@@ -78,7 +79,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.makeFieldMap()
         self.MapNames = []
         self.listMaps()
-        self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
+        self.Algorithm_RR = SMHAStar(self.MapGui, self.StartPoint, self.EndPoint, scheduler ="Round Robin")
 
         #List of algorithms
         self.Algorithms = [self.Algorithm_RR]
@@ -168,7 +169,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
         self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
         self.generateNodeMap(20, 80) #Populates Map
-        for row in self.Map:
+        for row in self.MapGui:
             for col in row:
                 print(col.Environment, end=" ")
             print(",")
@@ -258,7 +259,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                     elif (row>self.GridCells-1):
                         row = self.GridCells-1
 
-                    SelectedNode = self.Map[row][col]
+                    SelectedNode = self.MapGui[row][col]
                     if (SelectedNode != self.EndPoint):
                         self.StartPoint = SelectedNode
                         x = SelectedNode.xcoord
@@ -284,7 +285,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                     elif (row > self.GridCells - 1):
                         row = self.GridCells - 1
 
-                    SelectedNode = self.Map[row][col]
+                    SelectedNode = self.MapGui[row][col]
                     if (SelectedNode != self.StartPoint):
                         self.EndPoint = SelectedNode
                         # print("SELETED NEW END HERE")
@@ -411,7 +412,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.scene.addLine(line, self.black)
 
         #Make Grid (5 Pixel length squares)
-        self.Map = []
+        self.MapGui = []
         ycord = 2
         NumCells = int(self.Graphicswidth/5)
         for i in range(0, NumCells):
@@ -420,18 +421,18 @@ class SimulationMap(QtWidgets.QMainWindow):
             for j in range(0, NumCells):
                 row.append(Node(xcord, ycord, i, j))
                 xcord += 5
-            self.Map.append(row)
+            self.MapGui.append(row)
             ycord += 5
 
         # initialize start
-        self.StartPoint = self.Map[1][1]
+        self.StartPoint = self.MapGui[1][1]
         self.StartShape = QGraphicsEllipseItem(self.StartPoint.xcoord-5, self.StartPoint.ycoord-5, 10, 10)
         self.StartShape.setPen(QPen(self.black))
         self.StartShape.setBrush(QBrush(self.blue, Qt.SolidPattern))
         self.scene.addItem(self.StartShape)
 
         #initialize end
-        self.EndPoint = self.Map[NumCells-2][NumCells-2]
+        self.EndPoint = self.MapGui[NumCells - 2][NumCells - 2]
         self.EndShape = QGraphicsEllipseItem(self.EndPoint.xcoord-5, self.EndPoint.ycoord-5, 10, 10)
         self.EndShape.setPen(QPen(self.black))
         self.EndShape.setBrush(QBrush(self.red, Qt.SolidPattern))
@@ -467,12 +468,12 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.fieldObstacleList = []
 
     def generateNodeMap(self, size, numCells):# make num cells 80 for simplicity and prevent loss of map details, do not exceed grid cell size 160
-        self.Map = []
+        self.MapNode = []
         for i in range(0, numCells):
             row = []
             for j in range(0, numCells):
                 row.append(Node(j*size+size/2, i*size+size/2, i, j))
-            self.Map.append(row)
+            self.MapNode.append(row)
 
         cellSizePixel = int(self.Graphicsheight / numCells)
         for i in range(0, numCells):
@@ -483,7 +484,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                 if (Shape != None ):
                     for item in self.DrawnTerrain:
                         if item.getGuiObject() == Shape:
-                            self.Map[i][j].setEnvironmentType(item.TerrainType)
+                            self.MapNode[i][j].setEnvironmentType(item.TerrainType)
                             break
 
 class AlgorithmThread(QThread):

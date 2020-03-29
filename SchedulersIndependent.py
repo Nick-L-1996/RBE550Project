@@ -11,7 +11,7 @@ class SchedulerIndependent:
     def chooseQueue(self): #Todo function name from metaA* paper psuedo code
         pass
 
-    def UpdateMetaMethod(self):#Todo function name from metaA* paper psuedo code
+    def UpdateMetaMethod(self, Queue, bestHeuristic):#Todo function name from metaA* paper psuedo code
         pass
 
 
