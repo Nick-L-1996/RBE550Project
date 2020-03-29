@@ -21,10 +21,11 @@ class RR_SchedulerShared(SchedulerShared):
                 continue
 
             # check a neighbor with all heuristics
+            # for each key in the heuristic getters.
             for heuristic_type in self.heuristicGetters.keys():
                 
-                # get the edge cost between the current node and neighbor
-                edgeCost = self.getEdgeCost(currentNode, neighbor)
+                # get the edge cost between the current node and neighbor use same key as heuristic dict because the strings are the same.
+                edgeCost = self.getEdgeCost(heuristic_type, currentNode, neighbor)
                 print("Edge Cost:", edgeCost)
 
                 # get the hueristic value between the current node and the neighbor using specific hueristic and end goal
@@ -43,6 +44,8 @@ class RR_SchedulerShared(SchedulerShared):
                 # if neighbor is not in the unvisited list, add it to unvisited
                 if (neighbor not in unvisited):
                     unvisited.append(neighbor)
+                print ("=====")
+            print("\n", "===================","\n")
 
         # sort nodes in unvisited by their cost
         unvisited.sort(key=lambda x: x.totalCost)

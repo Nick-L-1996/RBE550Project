@@ -1,5 +1,6 @@
 import math
 from Heuristics import *
+from TerrainCosts import *
 
 #TODO: Make Function Headers
 
@@ -17,25 +18,34 @@ class SchedulerShared:
             "Sand": heuristicSand()
         }
 
+        ## Data Structure for Heuristic Value getters
+        self.costGetters = {
+            "Water": edgeCostWater(),
+            "Mud": edgeCostMud(),
+            "Concrete": edgeCostConcrete(),
+            "Trees": edgeCostTrees(),
+            "Sand": edgeCostSand()
+        }
 
         ##########This data structure is not how DTS works. Delete this###############
         ## Data Structure for Heuristic Chosen Counter (DTS)
-        self.heuristicChosenCount = {
-            "Water": 0,
-            "Mud": 0,
-            "Concrete": 0,
-            "Trees": 0,
-            "Sand": 0
-        }
+        # self.heuristicChosenCount = {
+        #     "Water": 0,
+        #     "Mud": 0,
+        #     "Concrete": 0,
+        #     "Trees": 0,
+        #     "Sand": 0
+        # }
 
     def updateUnvisitedQueue(self, currentNode, visited, unvisited, endNode):
         pass
 
-    def getEdgeCost(self, currentNode, parentNode):
-        # Euclidean Distance 
-        edgeCost = math.sqrt(abs(currentNode.row - parentNode.row)**2 + abs(currentNode.column - parentNode.column)**2)
-        # return the edge cost
-        return edgeCost
+    # STANDARD EUCLIDEAN DISTANCE COST - NOT NEEDED
+    # def getEdgeCost(self, currentNode, parentNode):
+    #     # Euclidean Distance 
+    #     edgeCost = math.sqrt(abs(currentNode.row - parentNode.row)**2 + abs(currentNode.column - parentNode.column)**2)
+    #     # return the edge cost
+    #     return edgeCost
 
     def getNodeNeighbors(self, currentNode):
          # N,E,S,W
@@ -79,3 +89,8 @@ class SchedulerShared:
         #call a method on the heuristic object
         heuristicValue = self.heuristicGetters[heuristic].getHeuristic(currentNode, neighborNode, endNode)
         return heuristicValue
+
+    def getEdgeCost(self, terrain, currentNode, neighborNode):
+        # call a method on specific heuristic object
+        costValue = self.costGetters[terrain].getEdgeCost(currentNode, neighborNode) 
+        return costValue

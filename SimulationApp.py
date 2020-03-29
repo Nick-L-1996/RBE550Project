@@ -78,9 +78,12 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.makeFieldMap()
         self.MapNames = []
         self.listMaps()
+
+        ## Algorithm Initializations 
+        # SMHA* with Round Robin heuristic scheduling
         self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
 
-        #List of algorithms
+        # List of algorithms
         self.Algorithms = [self.Algorithm_RR]
 
     def listMaps(self):
