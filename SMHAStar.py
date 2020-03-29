@@ -1,5 +1,6 @@
 from SchedulersShared import *
 from RR_SchedulerShared import *
+import time
 
 class SMHAStar:
     #self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
@@ -12,8 +13,9 @@ class SMHAStar:
         self.foundGoal = False
         # Need world object from GUI
         self.map = map
-        #scheduler goes here
-        self.scheduler = self.getScheduler(scheduler)
+        # scheduler goes here, initially a string until map is updated
+        self.schedulerType = scheduler
+        self.scheduler = None
         pass
 
 
@@ -21,19 +23,21 @@ class SMHAStar:
     def getScheduler(self, scheduler):
         if scheduler == "Round Robin":
             return RR_SchedulerShared(self.map)
-        #elif scheduler == "DTS":
-        #    return DTS_Scheduler(self.map)
 
         return EISMHA_Scheduler(self.map)
 
 
     def run(self):
-
+        print("Start:", self.startNode.row, self.startNode.column)
+        print("End:", self.endNode.row, self.endNode.column)
+        # intialize scheduler, now with the updated map
+        self.scheduler = self.getScheduler(self.schedulerType)
+        
         # add start to open set
         self.unVisited.append(self.startNode)
 
         # while open is not empty or the goal not found, keep searching
-        while (self.foundGoal != True or len(self.unVisited) != 0):
+        while (self.foundGoal != True and len(self.unVisited) != 0):
             #curr current node  from un top of open set
             currentNode = self.unVisited.pop(0)
             print(currentNode.row, currentNode.column)
@@ -48,8 +52,8 @@ class SMHAStar:
 
             # updated unVisited queue with unvisited queue and cost of neighbors
             # sort unvisited queue by total cost
-            currentNodeNeigbors = self.scheduler.updateUnvisitedQueue(currentNode, self.visited, self.unVisited, self.endNode)
-        
+            self.unVisited = self.scheduler.updateUnvisitedQueue(currentNode, self.visited, self.unVisited, self.endNode)
+            time.sleep(2)
         if(self.foundGoal):
             #Determine final path, by backtracking to source
             #return final path

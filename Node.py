@@ -9,8 +9,9 @@ class Node:
         self.parent = None
         self.totalCost = 10000000000
         self.Heuristic = 10000000000
-        self.Environment = "None"
-        self.costClass = terrainCosts()
+        # Ground should be concrete if you don't make it anything else
+        self.Environment = "Concrete"
+        self.costClass = EdgeCostConcrete()
         self.RobotDirection = np.array([1, 1]) # Need this to determine if the robot is turning or not for mud heuristic
 
     def isInList(self, nodeList):
@@ -22,19 +23,19 @@ class Node:
 
     def setEnvironmentType(self, Type):#Takes String of environment Type. Used by map generator
         if Type == "Trees":
-            self.costClass = edgeCostTrees()
+            self.costClass = EdgeCostTrees()
         elif Type == "Mud":
-            self.costClass = edgeCostMud()
+            self.costClass = EdgeCostMud()
         elif Type == "Sand":
-            self.costClass = edgeCostSand()
+            self.costClass = EdgeCostSand()
         elif Type == "Water":
-            self.costClass = edgeCostWater()
+            self.costClass = EdgeCostWater()
         elif Type == "Concrete":
-            self.costClass = edgeCostConcrete()
+            self.costClass = EdgeCostConcrete()
         self.Environment = Type
 
-    def getEdgeCost(self, CurrentNode): # pass ion the last node in the path to calculate the cost from it, to the node being expanded
-        return self.costClass.getEdgeCost(CurrentNode, self)
+    def getNeighborEdgeCost(self, Neighbor): # pass ion the last node in the path to calculate the cost from it, to the node being expanded
+        return self.costClass.getTerrainEdgeCost(self, Neighbor)
 
 
     #use this method when a node is selected by the scheduler to be added to the path
