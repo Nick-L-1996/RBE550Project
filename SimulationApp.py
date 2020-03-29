@@ -109,7 +109,7 @@ class SimulationMap(QtWidgets.QMainWindow):
     # Update the world for all the algorithms when you change the environment
     def updateMapForAlgs(self):
         for alg in self.Algorithms:
-            alg.map = self.Map
+            alg.map = self.MapNode
 
     def saveMap(self):
         name = self.SaveNameEntry.text()
@@ -174,9 +174,13 @@ class SimulationMap(QtWidgets.QMainWindow):
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
         #self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
         self.generateNodeMap(20, 80) #Populates Map
-        for row in self.MapGui:
+        for row in self.MapNode:
             for col in row:
+                print("[", end=" ")
                 print(col.Environment, end=" ")
+                print(col.xcoord, end=" ")
+                print(col.ycoord, end=" ")
+                print("]", end=" ")
             print(",")
 
     def MudSelect(self):

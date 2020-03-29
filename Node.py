@@ -35,7 +35,7 @@ class Node:
         self.Environment = Type
 
     def getNeighborEdgeCost(self, Neighbor): # pass ion the last node in the path to calculate the cost from it, to the node being expanded
-        return self.costClass.getTerrainEdgeCost(self, Neighbor)
+        return Neighbor.costClass.getTerrainEdgeCost(self, Neighbor)
 
 
     #use this method when a node is selected by the scheduler to be added to the path
