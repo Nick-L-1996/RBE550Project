@@ -11,20 +11,11 @@ class SchedulerShared:
 
         ## Data Structure for Heuristic Value getters
         self.heuristicGetters = {
-            "Water": heuristicWater(),
-            "Mud": heuristicMud(),
-            "Concrete": heuristicConcrete(),
-            "Trees": heuristicTrees(),
-            "Sand": heuristicSand()
-        }
-
-        ## Data Structure for Heuristic Value getters
-        self.costGetters = {
-            "Water": edgeCostWater(),
-            "Mud": edgeCostMud(),
-            "Concrete": edgeCostConcrete(),
-            "Trees": edgeCostTrees(),
-            "Sand": edgeCostSand()
+            "Water": HeuristicWater(),
+            "Mud": HeuristicMud(),
+            "Concrete": HeuristicConcrete(),
+            "Trees": HeuristicTrees(),
+            "Sand": HeuristicSand()
         }
 
         ##########This data structure is not how DTS works. Delete this###############
@@ -59,10 +50,10 @@ class SchedulerShared:
         if(row > 0):
             neighbors.append(self.map[row - 1][column])
         # If we have neighbors to the east
-        if (column < mapWidth):
+        if (column < mapWidth - 1):
             neighbors.append(self.map[row][column + 1])
         # If we have neighbors to the south
-        if (row < mapHeight):
+        if (row < mapHeight - 1):
             neighbors.append(self.map[row + 1][column])
         # If we have neighbors to the west
         if (column > 0):
@@ -73,13 +64,13 @@ class SchedulerShared:
         if (row > 0 and column > 0):
             neighbors.append(self.map[row - 1][column - 1])
         # north east
-        if (row > 0 and column < mapWidth):
+        if (row > 0 and column < mapWidth - 1):
             neighbors.append(self.map[row - 1][column + 1])
         # If we have neighbors to the south west
-        if (row < mapHeight and column > 0):
+        if (row < mapHeight - 1 and column > 0):
             neighbors.append(self.map[row + 1][column - 1])
         # south east
-        if (row < mapHeight and column < mapWidth):
+        if (row < mapHeight - 1 and column < mapWidth - 1):
             neighbors.append(self.map[row + 1][column + 1])
 
         return neighbors
@@ -89,8 +80,3 @@ class SchedulerShared:
         #call a method on the heuristic object
         heuristicValue = self.heuristicGetters[heuristic].getHeuristic(currentNode, neighborNode, endNode)
         return heuristicValue
-
-    def getEdgeCost(self, terrain, currentNode, neighborNode):
-        # call a method on specific heuristic object
-        costValue = self.costGetters[terrain].getEdgeCost(currentNode, neighborNode) 
-        return costValue

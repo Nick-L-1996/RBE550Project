@@ -108,6 +108,11 @@ class SimulationMap(QtWidgets.QMainWindow):
             alg.endNode = self.EndPoint
             alg.start = self.StartPoint
 
+    # Update the world for all the algorithms when you change the environment
+    def updateMapForAlgs(self):
+        for alg in self.Algorithms:
+            alg.map = self.Map
+
     def saveMap(self):
         name = self.SaveNameEntry.text()
         if name !="":
@@ -169,12 +174,8 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def GenerateWorld(self):
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
-        self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
+        #self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
         self.generateNodeMap(20, 80) #Populates Map
-        for row in self.Map:
-            for col in row:
-                print(col.Environment, end=" ")
-            print(",")
 
     def MudSelect(self):
         self.TerrainType = "Mud"
@@ -426,6 +427,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.Map.append(row)
             ycord += 5
 
+
         # initialize start
         self.StartPoint = self.Map[1][1]
         self.StartShape = QGraphicsEllipseItem(self.StartPoint.xcoord-5, self.StartPoint.ycoord-5, 10, 10)
@@ -476,7 +478,6 @@ class SimulationMap(QtWidgets.QMainWindow):
             for j in range(0, numCells):
                 row.append(Node(j*size+size/2, i*size+size/2, i, j))
             self.Map.append(row)
-
         cellSizePixel = int(self.Graphicsheight / numCells)
         for i in range(0, numCells):
             for j in range(0, numCells):
@@ -488,6 +489,8 @@ class SimulationMap(QtWidgets.QMainWindow):
                         if item.getGuiObject() == Shape:
                             self.Map[i][j].setEnvironmentType(item.TerrainType)
                             break
+        self.updateMapForAlgs()
+        print ("updated environments")
 
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
