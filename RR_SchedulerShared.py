@@ -1,5 +1,5 @@
-from Scheduler import *
-class RR_Scheduler(Scheduler):
+from SchedulersShared import *
+class RR_SchedulerShared(SchedulerShared):
     def __init__(self, map):
         super().__init__(map)
         pass

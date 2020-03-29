@@ -1,5 +1,5 @@
-from Scheduler import *
-from RR_Scheduler import *
+from SchedulersShared import *
+from RR_SchedulerShared import *
 
 class SMHAStar:
     #self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
@@ -20,9 +20,9 @@ class SMHAStar:
     # Returns a scheduler corresponding to input
     def getScheduler(self, scheduler):
         if scheduler == "Round Robin":
-            return RR_Scheduler(self.map)
-        elif scheduler == "DTS":
-            return DTS_Scheduler(self.map)
+            return RR_SchedulerShared(self.map)
+        #elif scheduler == "DTS":
+        #    return DTS_Scheduler(self.map)
 
         return EISMHA_Scheduler(self.map)
 

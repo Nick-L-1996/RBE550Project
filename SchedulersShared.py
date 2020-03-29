@@ -3,7 +3,7 @@ from Heuristics import *
 
 #TODO: Make Function Headers
 
-class Scheduler:
+class SchedulerShared:
     #scheduler needs to know what the world looks like
     def __init__(self, map):
         self.map = map
@@ -16,7 +16,9 @@ class Scheduler:
             "Trees": heuristicTrees(),
             "Sand": heuristicSand()
         }
-        
+
+
+        ##########This data structure is not how DTS works. Delete this###############
         ## Data Structure for Heuristic Chosen Counter (DTS)
         self.heuristicChosenCount = {
             "Water": 0,
