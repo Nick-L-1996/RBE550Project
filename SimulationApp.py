@@ -673,14 +673,14 @@ class AlgorithmThread(QThread):
 
             while (Done == False):
                 time.sleep(self.gui.SimSpeed)
-                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
                 if (GoalFound):
                     Done = True
                     print("Found Goal")
                 elif (QueueEmpty):
                     Done = True
                     print("Queue Empty")
-                numExp += 1
+                numExp += newnumExp
                 self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, numExp])
                 ExploredQueue.append(NewExploredNode)
 

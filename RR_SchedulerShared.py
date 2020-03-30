@@ -9,11 +9,12 @@ class RR_SchedulerShared(SchedulerShared):
         
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
-        newNeighbors = [] #needed for GUI
+        newFrontierNodes = [] #needed for GUI
         
         print("Current Node:", currentNode.row, currentNode.column)
         # get unexplored neighbors
         # for every neighbor find the lowest value across all heuristics
+        numberExpansions = 0
         for neighbor in neighbors:
             #print("Neighbor Node:", neighbor.row, neighbor.column)
             
@@ -34,6 +35,7 @@ class RR_SchedulerShared(SchedulerShared):
             chosenHeuristic = None
             # check a neighbor with all heuristics
             # for each key in the heuristic getters.
+
             for heuristic_type in self.heuristicGetters.keys():
                 
                 # get the hueristic value between the current node and the neighbor using specific hueristic and end goal
@@ -51,16 +53,16 @@ class RR_SchedulerShared(SchedulerShared):
                     chosenHeuristic = heuristic_type
                     ########NEW NICK ADDED######## updates robot direction and all other needed paramaters
                     neighbor.fullyExpandNode(currentNode.CostToTravel + edgeCost, heuristicCost, tempCost,  currentNode)
-
+                numberExpansions+=1
             # if neighbor is not in the unvisited list, add it to unvisited
             if (neighbor not in FrontierQueue):
                 print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, edgeCost)
-                newNeighbors.append(neighbor)
+                newFrontierNodes.append(neighbor)
                 FrontierQueue.append(neighbor)
     
 
         # sort nodes in unvisited by their cost
         FrontierQueue.sort(key=lambda x: x.PriorityQueueCost)
 
-        # return updated unvisited (open list)
-        return FrontierQueue, newNeighbors
+        # return Frontier Queue, newFrontierNodes, number of expansions
+        return FrontierQueue, newFrontierNodes, numberExpansions

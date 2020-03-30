@@ -35,12 +35,13 @@ class SharedQueueAlgorithm:
 
     # This function is needed for compatibility with GUI
     #takes in the frontier and explored queues
-    #returns 5 pieces of information
+    #returns 6 pieces of information
     #1 boolean if goal was found or not
     #2 new nodes added to the frontier queue. This is used to update the GUI\
     #3 returns the current node so that the GUI can update this node from frontier to explored
     #4 returns a boolean for if the queue is empty. Used to determine if there isnt a possible path
     #5 returns the frontier queue
+    #6 number of expansions
 
     def run(self, ExploredList, FrontierQueue):
         QueueEmpty = False
@@ -48,15 +49,15 @@ class SharedQueueAlgorithm:
         GoalFound = False
         CurrentNode = FrontierQueue[0]
         FrontierQueue.remove(CurrentNode)
-
+        numExpansions = 0
         if CurrentNode == self.endNode:
             print ("found goal")
             GoalFound = True
         else:
         # updated unVisited queue with unvisited queue and cost of neighbors
         # sort unvisited queue by total cost
-            FrontierQueue, NewFrontierNodes = self.scheduler.Expand(CurrentNode, ExploredList, FrontierQueue, self.endNode, self.isGreedy)
+            FrontierQueue, NewFrontierNodes, numExpansions = self.scheduler.Expand(CurrentNode, ExploredList, FrontierQueue, self.endNode, self.isGreedy)
         if (len(FrontierQueue) == 0):
             QueueEmpty = True
         
-        return GoalFound, NewFrontierNodes, CurrentNode, QueueEmpty, FrontierQueue
+        return GoalFound, NewFrontierNodes, CurrentNode, QueueEmpty, FrontierQueue, numExpansions
