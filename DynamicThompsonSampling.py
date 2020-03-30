@@ -7,7 +7,7 @@ class DTS_SchedulerIndependent(SchedulerIndependent):
         super().__init__(map, Queues)
         # DTS will take this Queue list and create its own queue list with alpha, beta and probability distribution values
         self.DTSQueues = []
-        queueKeys = Queues.Keys()
+        queueKeys = Queues.keys()
         for key in queueKeys:
             self.DTSQueues.append(DTSQueueObject(Queues[key], 10, startNode, endNode))
 

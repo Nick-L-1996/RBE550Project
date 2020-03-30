@@ -8,11 +8,11 @@ class IndependentQueueAlgorithm:
     def __init__(self, map, start, end, scheduler="DTSGreedy"):
         self.Queues = {}
         # add all Queues to list
-        self.Queues[1] = independentQueue(HeuristicConcrete(), 1)
-        self.Queues[2] = independentQueue(HeuristicMud(), 2)
-        self.Queues[3] = independentQueue(HeuristicSand(), 3)
-        self.Queues[4] = independentQueue(HeuristicWater(), 4)
-        self.Queues[5] = independentQueue(HeuristicTrees(), 5)
+        self.Queues["Concrete"] = independentQueue(HeuristicConcrete(), "Concrete")
+        self.Queues["Mud"] = independentQueue(HeuristicMud(), "Mud")
+        self.Queues["Sand"] = independentQueue(HeuristicSand(), "Sand")
+        self.Queues["Water"] = independentQueue(HeuristicWater(), "Water")
+        self.Queues["Trees"] = independentQueue(HeuristicTrees(), "Trees")
 
         self.startNode = start
         self.endNode = end
@@ -45,8 +45,8 @@ class IndependentQueueAlgorithm:
     #def expand(self, queue):
 
 class independentQueue:
-    def __init__(self, heuristic, IDNum):
-        self.IDNum = IDNum
+    def __init__(self, heuristic, ID):
+        self.ID = ID
         self.Frontier = []
         self.Explored = []
         self.Heuristic = heuristic

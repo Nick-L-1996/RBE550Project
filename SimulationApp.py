@@ -10,7 +10,9 @@ from Node import Node
 from GazeboWorld import *
 import numpy as np  
 import pickle
+import copy
 from SharedQueueAlgorithm import *
+from IndependentQueueAlgorithm import *
 import os
 designerFile = "MapBuilderGui.ui"
 
@@ -66,6 +68,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.EndShapeShared = None
         self.MapGui = []
         self.MapNode = []
+        self.MapNodeIndividual = {}
         self.DrawnTerrain = []
         self.fieldObstacleList = []
         self.SimRunning = False
@@ -87,6 +90,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.EndGui = Node(0, 0, 0, 0)
         self.StartNode = Node(0, 0, 0, 0)
         self.EndNode = Node(0, 0, 0, 0)
+        self.StartNodeIndividual = {}
+        self.EndNodeIndividual = {}
 
         self.scene = QGraphicsScene() #scene for building map
         self.SharedQueueScene = QGraphicsScene() #scene for showing animation
@@ -95,6 +100,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.makeFieldMap()
         self.MapNames = []
         self.listMaps()
+        self.QueueSelect.activated.connect(self.chooseQueue)
 
         self.SimSpeed = 0.2
         self.SimSpeedCB.addItem("1x")
@@ -120,6 +126,11 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*")
         self.isAlgorithmMultiQueue = False
         ################################################################################################
+
+    def chooseQueue(self):
+        key = self.QueueSelect.currentText()
+        print("Current View =" + key)
+        self.GridView.setScene(self.MapNodeIndividual[key])
     def SetSimSpeed(self):
         text = self.SimSpeedCB.currentText()
         if text == "1x":
@@ -154,17 +165,19 @@ class SimulationMap(QtWidgets.QMainWindow):
         text = self.AlgorithmSelect.currentText()
         if text == "Shared MultiHeuristic A*":
             self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None) #update algorithm with new values
+            self.constructSharedQueueAnimationScene()
         elif text == "Shared MultiHeuristic Greedy Best First Search":
             self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None)  # update algorithm with new values
+            self.constructSharedQueueAnimationScene()
         elif text == "Individual Greedy DTS":
-
-            pass  # TODO add greedy DTS
+            self.constructIndependentQueueAnimationScene()
+            # TODO add greedy DTS
         elif text == "Individual A* DTS":
-
-            pass  # TODO add A* DTS
+            self.constructIndependentQueueAnimationScene()
+            # TODO add A* DTS
         self.StatusLabel.setText("Status: Running")
-        self.constructSharedQueueAnimationScene()
-        self.AlgThread.start()
+
+        #self.AlgThread.start()
 
     def saveMap(self):
         name = self.SaveNameEntry.text()
@@ -557,6 +570,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHGBFS")
             self.isAlgorithmMultiQueue = False
         elif text == "Individual Greedy DTS":
+            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual, self.EndNodeIndividual, scheduler="DTSGreedy")
             self.isAlgorithmMultiQueue = True
             pass #TODO add greedy DTS
         elif text == "Individual A* DTS":
@@ -607,6 +621,7 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def constructSharedQueueAnimationScene(self):
         print("Constructing new scene")
+        self.QueueSelect.clear()
         self.pixelsPerCellNode = self.Graphicsheight/self.GridCellsSimulation
         self.SharedQueueScene = QGraphicsScene()
         self.GridView.setScene(self.SharedQueueScene)
@@ -655,6 +670,67 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.EndShapeShared.setBrush(QBrush(self.red, Qt.SolidPattern))
             self.SharedQueueScene.addItem(self.EndShapeShared)
 
+
+    def constructIndependentQueueAnimationScene(self):
+        self.pixelsPerCellNode = self.Graphicsheight / self.GridCellsSimulation
+        self.MapNodeIndividual = {}
+        self.StartNodeIndividual = {}
+        self.EndNodeIndividual = {}
+        self.QueueSelect.clear()
+        for key in self.CurrentAlgorithm.Queues.keys():
+
+            print("Constructing new scene")
+            self.IndividualQueueScenes[key] =  QGraphicsScene()
+            # draw box
+            line = QLineF(-1, -1, self.Graphicswidth+1, -1)
+            self.IndividualQueueScenes[key].addLine(line, self.black)
+            line = QLineF(-1, self.Graphicsheight+1, self.Graphicswidth+1, self.Graphicsheight+1)
+            self.IndividualQueueScenes[key].addLine(line, self.black)
+            line = QLineF(self.Graphicswidth+1, -1, self.Graphicswidth+1, self.Graphicsheight+1)
+            self.IndividualQueueScenes[key].addLine(line, self.black)
+            line = QLineF(-1, -1, -1, self.Graphicsheight + 1)
+            self.IndividualQueueScenes[key].addLine(line, self.black)
+
+
+            #Add terrain from MapNode
+            for rows in self.MapNode:
+                for col in rows:
+                    TerrainType = col.Environment
+                    if TerrainType == "Water":
+                        CurrentTerrainObject = Water(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNodel+self.pixelsPerCellNodel/2)
+                    elif TerrainType == "Mud":
+                        CurrentTerrainObject = Mud(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                    elif TerrainType == "Concrete":
+                        CurrentTerrainObject = Concrete(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                    elif TerrainType == "Sand":
+                        CurrentTerrainObject = Sand(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                    elif TerrainType == "Tree":
+                        CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNodel/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                    else:
+                        CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                    self.IndividualQueueScenes[key].addItem(CurrentTerrainObject.getGuiObject())
+
+                    # Place Start
+                self.StartShapeShared = QGraphicsEllipseItem(self.StartNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                             self.StartNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+                                                             10)
+                self.StartShapeShared.setPen(QPen(self.black))
+                self.StartShapeShared.setBrush(QBrush(self.blue, Qt.SolidPattern))
+                self.IndividualQueueScenes[key].addItem(self.StartShapeShared)
+
+                # Place End
+                self.EndShapeShared = QGraphicsEllipseItem(self.EndNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                           self.EndNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+                                                           10)
+                self.EndShapeShared.setPen(QPen(self.black))
+                self.EndShapeShared.setBrush(QBrush(self.red, Qt.SolidPattern))
+                self.IndividualQueueScenes[key].addItem(self.EndShapeShared)
+            self.MapNodeIndividual[key] = copy.deepcopy(self.MapNode)#needs fresh map for each queue
+            self.StartNodeIndividual[key] = copy.deepcopy(self.StartNode)
+            self.EndNodeIndividual[key] = copy.deepcopy(self.EndNode)
+            self.QueueSelect.addItem(key)
+        self.GridView.setScene(self.SharedQueueScene)
+
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
 
@@ -702,6 +778,8 @@ class AlgorithmThread(QThread):
             else:
                 self.signal.emit([True, [], [], [], numExp])
             print("Done")
+        elif self.gui.isAlgorithmMultiQueue == True:
+            pass
 
 
 if __name__ == '__main__':
