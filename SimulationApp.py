@@ -584,6 +584,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         if self.isAlgorithmMultiQueue == False:
             self.NumExpLBL.setText("# Expansions: " + str(result[4]))
             if (result[0] == True):
+                self.Path = result[3]
                 for item in result[3]:
                     SelectedNode = item
                     x = SelectedNode.column * self.pixelsPerCellNode
@@ -641,7 +642,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             for col in rows:
                 TerrainType = col.Environment
                 if TerrainType == "Water":
-                    CurrentTerrainObject = Water(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNodel+self.pixelsPerCellNodel/2)
+                    CurrentTerrainObject = Water(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                 elif TerrainType == "Mud":
                     CurrentTerrainObject = Mud(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                 elif TerrainType == "Concrete":
@@ -649,22 +650,22 @@ class SimulationMap(QtWidgets.QMainWindow):
                 elif TerrainType == "Sand":
                     CurrentTerrainObject = Sand(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                 elif TerrainType == "Tree":
-                    CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNodel/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                    CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                 else:
                     CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                 self.SharedQueueScene.addItem(CurrentTerrainObject.getGuiObject())
 
                 # Place Start
-            self.StartShapeShared = QGraphicsEllipseItem(self.StartNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
-                                                         self.StartNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+            self.StartShapeShared = QGraphicsEllipseItem(self.StartNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                        self.StartNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
                                                          10)
             self.StartShapeShared.setPen(QPen(self.black))
             self.StartShapeShared.setBrush(QBrush(self.blue, Qt.SolidPattern))
             self.SharedQueueScene.addItem(self.StartShapeShared)
 
             # Place End
-            self.EndShapeShared = QGraphicsEllipseItem(self.EndNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
-                                                       self.EndNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+            self.EndShapeShared = QGraphicsEllipseItem(self.EndNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                        self.EndNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
                                                        10)
             self.EndShapeShared.setPen(QPen(self.black))
             self.EndShapeShared.setBrush(QBrush(self.red, Qt.SolidPattern))
@@ -739,47 +740,52 @@ class AlgorithmThread(QThread):
         self.gui = gui
 
     def run(self):
-        Done = False # Becomes True when goal is found
-        if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
-            self.gui.StartNode.CostToTravel = 0
-            FrontierQueue = [self.gui.StartNode]
-            ExploredQueue = []
-            Path = []
-            numExp = 0
+        try:
+            Done = False # Becomes True when goal is found
+            if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
+                self.gui.StartNode.CostToTravel = 0
+                FrontierQueue = [self.gui.StartNode]
+                ExploredQueue = []
+                Path = []
+                numExp = 0
 
-            while (Done == False):
-                time.sleep(self.gui.SimSpeed)
-                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
-                if (GoalFound):
-                    Done = True
-                    print("Found Goal")
-                elif (QueueEmpty):
-                    Done = True
-                    print("Queue Empty")
-                numExp += newnumExp
-                self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, numExp])
-                ExploredQueue.append(NewExploredNode)
+                while (Done == False):
+                    time.sleep(self.gui.SimSpeed)
+                    GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
+                    if (GoalFound):
+                        Done = True
+                        print("Found Goal")
+                    elif (QueueEmpty):
+                        Done = True
+                        print("Queue Empty")
+                    numExp += newnumExp
+                    self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, numExp])
+                    ExploredQueue.append(NewExploredNode)
 
-            #finds path for GUI and to be sent to Turtle Bot
-            if (self.gui.EndNode.parent is not None):
-                StartReached = False
-                CurrentNode = self.gui.EndNode.parent
-                while (StartReached == False):
+                #finds path for GUI and to be sent to Turtle Bot
+                if (self.gui.EndNode.parent is not None):
+                    StartReached = False
+                    CurrentNode = self.gui.EndNode.parent
+                    while (StartReached == False):
 
-                    if (CurrentNode == self.gui.StartNode):
-                        StartReached = True
-                    else:
-                        Path.append(CurrentNode)
-                        CurrentNode = CurrentNode.parent
+                        if (CurrentNode == self.gui.StartNode):
+                            StartReached = True
+                        else:
+                            Path.append(CurrentNode)
+                            CurrentNode = CurrentNode.parent
 
-                Path.reverse()
-                self.gui.Path = Path
-                self.signal.emit([True, [], [], Path, numExp])
-            else:
-                self.signal.emit([True, [], [], [], numExp])
-            print("Done")
-        elif self.gui.isAlgorithmMultiQueue == True:
-            pass
+                    Path.reverse()
+                    self.gui.Path = Path
+                    self.signal.emit([True, [], [], Path, numExp])
+                else:
+                    self.signal.emit([True, [], [], [], numExp])
+                print("Done")
+            elif self.gui.isAlgorithmMultiQueue == True:
+                pass
+
+        except Exception as e:
+            print("Please Click 'Run Gazebo', then hit Run. The world is empty right now")
+            print(str(e))
 
 
 if __name__ == '__main__':
