@@ -19,7 +19,7 @@ class RR_SchedulerShared(SchedulerShared):
             #print("Neighbor Node:", neighbor.row, neighbor.column)
             
             # if this neighbor was marked as visited
-            if(neighbor in Explored or neighbor.Environment== "Trees"):
+            if(neighbor in Explored): ## removed check for trees
 
                #print("Visited", neighbor.row, neighbor.column)
                continue
@@ -56,7 +56,7 @@ class RR_SchedulerShared(SchedulerShared):
                 numberExpansions+=1
             # if neighbor is not in the unvisited list, add it to unvisited
             if (neighbor not in FrontierQueue):
-                print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, edgeCost)
+                print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, neighbor.CostToTravel)
                 newFrontierNodes.append(neighbor)
                 FrontierQueue.append(neighbor)
     
