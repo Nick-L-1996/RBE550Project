@@ -5,10 +5,11 @@ class RR_SchedulerShared(SchedulerShared):
         pass
 
     #OVERLOADED FUNCTION
-    def updateUnvisitedQueue(self, currentNode, visited, unvisited, endNode):
+    def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):
         
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
+        newNeighbors = [] #needed for GUI
         
         print("Current Node:", currentNode.row, currentNode.column)
         # get unexplored neighbors
@@ -17,7 +18,8 @@ class RR_SchedulerShared(SchedulerShared):
             #print("Neighbor Node:", neighbor.row, neighbor.column)
             
             # if this neighbor was marked as visited
-            if(neighbor in visited):
+            if(neighbor in Explored or neighbor.Environment== "Trees"):
+
                #print("Visited", neighbor.row, neighbor.column)
                continue
                 
@@ -39,24 +41,26 @@ class RR_SchedulerShared(SchedulerShared):
                 #print("Heuristic Cost:", heuristic_type, heuristicCost)
 
                 # calculate the would be cost to travel from current node to neighbor
-                tempCost = edgeCost + heuristicCost
-
+                #allows for this scheduler to become SMHA* or SMHGBFS depending on if Greedy or not
+                if isGreedy:
+                    tempCost = heuristicCost
+                else:
+                    tempCost = currentNode.CostToTravel + edgeCost + heuristicCost
                 # if new temp path cost is cheaper than another current path cost to get to neighbor, update neighbor cost
-                if tempCost < neighbor.totalCost:
+                if tempCost < neighbor.PriorityQueueCost:
                     chosenHeuristic = heuristic_type
-                    neighbor.totalCost = tempCost
-                    # we need to set the new parent if the cost has changed
-                    neighbor.parent = currentNode
-                    #print("Neighbor Cost: ", neighbor.totalCost)
+                    ########NEW NICK ADDED######## updates robot direction and all other needed paramaters
+                    neighbor.fullyExpandNode(currentNode.CostToTravel + edgeCost, heuristicCost, tempCost,  currentNode)
 
             # if neighbor is not in the unvisited list, add it to unvisited
-            if (neighbor not in unvisited):
+            if (neighbor not in FrontierQueue):
                 print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, edgeCost)
-                unvisited.append(neighbor)
+                newNeighbors.append(neighbor)
+                FrontierQueue.append(neighbor)
     
 
         # sort nodes in unvisited by their cost
-        unvisited.sort(key=lambda x: x.totalCost)
+        FrontierQueue.sort(key=lambda x: x.PriorityQueueCost)
 
         # return updated unvisited (open list)
-        return unvisited
+        return FrontierQueue, newNeighbors

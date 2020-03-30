@@ -1,4 +1,5 @@
 from DynamicThompsonSampling import *
+from Heuristics import *
 
 #changed name from IMHA* bc DTS is a greedy best first search algorithm with multiple prioritized Queues as written in the paper
 # We can easily make it A* though
@@ -7,11 +8,11 @@ class IndependentQueueAlgorithm:
     def __init__(self, map, start, end, scheduler="DTSGreedy"):
         self.Queues = {}
         # add all Queues to list
-        self.Queues[1] = independentQueue(heuristicConcrete(), 1)
-        self.Queues[2] = independentQueue(heuristicMud(), 2)
-        self.Queues[3] = independentQueue(heuristicSand(), 3)
-        self.Queues[4] = independentQueue(heuristicWater(), 4)
-        self.Queues[5] = independentQueue(heuristicTrees(), 5)
+        self.Queues[1] = independentQueue(HeuristicConcrete(), 1)
+        self.Queues[2] = independentQueue(HeuristicMud(), 2)
+        self.Queues[3] = independentQueue(HeuristicSand(), 3)
+        self.Queues[4] = independentQueue(HeuristicWater(), 4)
+        self.Queues[5] = independentQueue(HeuristicTrees(), 5)
 
         self.startNode = start
         self.endNode = end

@@ -28,7 +28,7 @@ class SchedulerShared:
         #     "Sand": 0
         # }
 
-    def updateUnvisitedQueue(self, currentNode, visited, unvisited, endNode):
+    def Expand(self, currentNode, visited, unvisited, endNode, isGreedy):
         pass
 
     # STANDARD EUCLIDEAN DISTANCE COST - NOT NEEDED

@@ -7,8 +7,9 @@ class Node:
         self.row = row
         self.column = column
         self.parent = None
-        self.totalCost = 10000000000
+        self.CostToTravel = 10000000000
         self.Heuristic = 10000000000
+        self.PriorityQueueCost = 1000000000000
         # Ground should be concrete if you don't make it anything else
         self.Environment = "Concrete"
         self.costClass = EdgeCostConcrete()
@@ -39,8 +40,9 @@ class Node:
 
 
     #use this method when a node is selected by the scheduler to be added to the path
-    def fullyExpandNode(self, totalCost, Heuristic, parentNode):# pass in the found values for heuristic and costs so that it isnt recalculated again
-        self.totalCost = totalCost
+    def fullyExpandNode(self, costToTravel, Heuristic, totalCost, parentNode):# pass in the found values for heuristic and costs so that it isnt recalculated again
+        self.CostToTravel = costToTravel
         self.Heuristic = Heuristic
+        self.PriorityQueueCost = totalCost
         self.parent = parentNode
         self.RobotDirection = np.array([self.xcoord - parentNode.xcoord, self.ycoord - parentNode.ycoord])

@@ -10,7 +10,7 @@ from Node import Node
 from GazeboWorld import *
 import numpy as np  
 import pickle
-from SMHAStar import *
+from SharedQueueAlgorithm import *
 import os
 designerFile = "MapBuilderGui.ui"
 
@@ -29,6 +29,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.DeleteShapeBTN.clicked.connect(self.removeObstacle)
         self.ClearCursorBTN.clicked.connect(self.DoneMapEditor)
         self.ClearObjectsBTN.clicked.connect(self.ClearObs)
+        self.CLRBTN.clicked.connect(self.ClearSearch)
         self.AddCircleBTN.clicked.connect(self.circleSel)
         self.AddSquareBTN.clicked.connect(self.SquareSel)
         self.WaterBTN.clicked.connect(self.WaterSelect)
@@ -49,6 +50,9 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.SizeEntry.setCurrentIndex(2)
         self.SizeEntry.activated.connect(self.SizeSelectChange)
         self.Size = 40
+        self.GridCellsGui = 80
+        self.GridCellsSimulation = 80
+        self.GazeboTileSize = 20
 
         self.ShapeType = "None"
         self.TerrainType = "Tree"
@@ -58,6 +62,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.CursorState = 0
         self.StartShape = None
         self.EndShape = None
+        self.StartShapeShared = None
+        self.EndShapeShared = None
         self.MapGui = []
         self.MapNode = []
         self.DrawnTerrain = []
@@ -65,7 +71,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.SimRunning = False
         self.Path = []
         self.PathState = 0
-        self.StartNode = Node(0, 0, 0, 0)
+
+
         self.MapType = 1
         self.scene = QGraphicsScene()
         self.black = QColor(qRgb(0, 0, 0))
@@ -76,13 +83,59 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.yellow = QColor(qRgb(255, 255, 0))
         self.purple = QColor(qRgb(238, 130, 238))
         self.magenta = QColor(qRgb(255, 0, 255))
+        self.StartGui = Node(0, 0, 0, 0)
+        self.EndGui = Node(0, 0, 0, 0)
+        self.StartNode = Node(0, 0, 0, 0)
+        self.EndNode = Node(0, 0, 0, 0)
+
+        self.scene = QGraphicsScene() #scene for building map
+        self.SharedQueueScene = QGraphicsScene() #scene for showing animation
+        self.IndividualQueueScenes = {} #will have a dictionary of scenes, 1 for each queue
+
         self.makeFieldMap()
         self.MapNames = []
         self.listMaps()
-        self.Algorithm_RR = SMHAStar(self.MapGui, self.StartPoint, self.EndPoint, scheduler ="Round Robin")
 
-        #List of algorithms
-        self.Algorithms = [self.Algorithm_RR]
+        self.SimSpeed = 0.2
+        self.SimSpeedCB.addItem("1x")
+        self.SimSpeedCB.addItem("2x")
+        self.SimSpeedCB.addItem("4x")
+        self.SimSpeedCB.addItem("8x")
+        self.SimSpeedCB.addItem("16x")
+        self.SimSpeedCB.addItem("32x")
+        self.SimSpeedCB.addItem("Instant")
+        self.SimSpeedCB.activated.connect(self.SetSimSpeed)
+
+
+        self.AlgorithmSelect.addItem("Shared MultiHeuristic A*")
+        self.AlgorithmSelect.addItem("Shared MultiHeuristic Greedy Best First Search")
+        self.AlgorithmSelect.addItem("Individual Greedy DTS")
+        self.AlgorithmSelect.addItem("Individual A* DTS")
+        self.AlgorithmSelect.activated.connect(self.algSelectCallback)
+
+        self.AlgThread = AlgorithmThread(self)
+        self.AlgThread.signal.connect(self.UpdateMap)
+
+        ########################################### initialize to SMHA*#################################
+        self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*")
+        self.isAlgorithmMultiQueue = False
+        ################################################################################################
+    def SetSimSpeed(self):
+        text = self.SimSpeedCB.currentText()
+        if text == "1x":
+            self.SimSpeed = 0.2
+        elif text == "2x":
+            self.SimSpeed = 0.1
+        elif text == "4x":
+            self.SimSpeed = 0.05
+        elif text == "8x":
+            self.SimSpeed = 0.025
+        elif text == "16x":
+            self.SimSpeed = 0.0125
+        elif text == "32x":
+            self.SimSpeed = 0.00625
+        elif text == "Instant":
+            self.SimSpeed = 0
 
     def listMaps(self):
         self.LoadCombo.clear()
@@ -97,19 +150,21 @@ class SimulationMap(QtWidgets.QMainWindow):
             os.mkdir("MapBuilderMaps")
 
     def runAlg(self):
-        #run SMHA* with RR scheduler
-        self.Algorithm_RR.run()
-    
-    # Update the start and end for all the algorithms when you change the start or end
-    def updateStartEndForAlgs(self):
-        for alg in self.Algorithms:
-            alg.endNode = self.EndPoint
-            alg.start = self.StartPoint
+        self.SimRunning = True
+        text = self.AlgorithmSelect.currentText()
+        if text == "Shared MultiHeuristic A*":
+            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None) #update algorithm with new values
+        elif text == "Shared MultiHeuristic Greedy Best First Search":
+            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None)  # update algorithm with new values
+        elif text == "Individual Greedy DTS":
 
-    # Update the world for all the algorithms when you change the environment
-    def updateMapForAlgs(self):
-        for alg in self.Algorithms:
-            alg.map = self.MapNode
+            pass  # TODO add greedy DTS
+        elif text == "Individual A* DTS":
+
+            pass  # TODO add A* DTS
+        self.StatusLabel.setText("Status: Running")
+        self.constructSharedQueueAnimationScene()
+        self.AlgThread.start()
 
     def saveMap(self):
         name = self.SaveNameEntry.text()
@@ -153,13 +208,9 @@ class SimulationMap(QtWidgets.QMainWindow):
     def ClearSearch(self):
         print("Clearing Search")
         self.StatusLabel.setText("Status: Ready")
-        self.scene.removeItem(self.StartShape)
-        self.scene.removeItem(self.EndShape)
+
         self.NumExpLBL.setText("# Expansions: 0")
-        self.Path = []
-        self.clearFieldMap()
-        self.scene.addItem(self.StartShape)
-        self.scene.addItem(self.EndShape)
+        self.GridView.setScene(self.scene)
     def circleSel(self):
         self.ShapeType = "Circle"
         self.CursorState = 5
@@ -173,7 +224,7 @@ class SimulationMap(QtWidgets.QMainWindow):
     def GenerateWorld(self):
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
         #self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
-        self.generateNodeMap(20, 80) #Populates Map
+        self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation) #Populates Map
         for row in self.MapNode:
             for col in row:
                 print("[", end=" ")
@@ -211,7 +262,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.sceneShape.addItem(self.CurrentTerrainObject.getGuiObject())
 
     def getCellIndex(self, X, Y):
-        if(X<0 or Y<0 or X>=self.pixelsPerCell*self.GridCells or Y>=self.pixelsPerCell*self.GridCells):
+        if(X<0 or Y<0 or X>=self.pixelsPerCell*self.GridCellsGui or Y>=self.pixelsPerCell*self.GridCellsGui):
             col = -1
             row= - 1
         else:
@@ -253,7 +304,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         else:
             self.ClearSearch()
             col, row = self.getCellIndex(event.scenePos().x(), event.scenePos().y())
-            if (col >= self.GridCells or row >= self.GridCells or col<0 or row<0):
+            if (col >= self.GridCellsGui or row >= self.GridCellsGui or col<0 or row<0):
                 print("Clicked Outside Window")
             else:
                 if self.CursorState ==1: # Place Start
@@ -261,16 +312,16 @@ class SimulationMap(QtWidgets.QMainWindow):
 
                     if(col<1):
                         col=1
-                    elif (col>self.GridCells-1):
-                        col = self.GridCells-1
+                    elif (col > self.GridCellsGui - 1):
+                        col = self.GridCellsGui - 1
                     if (row<1):
                         row = 1
-                    elif (row>self.GridCells-1):
-                        row = self.GridCells-1
+                    elif (row > self.GridCellsGui - 1):
+                        row = self.GridCellsGui - 1
 
                     SelectedNode = self.MapGui[row][col]
-                    if (SelectedNode != self.EndPoint):
-                        self.StartPoint = SelectedNode
+                    if (SelectedNode != self.EndGui):
+                        self.StartGui = SelectedNode
                         x = SelectedNode.xcoord
                         y = SelectedNode.ycoord
                         self.scene.removeItem(self.StartShape)
@@ -278,8 +329,6 @@ class SimulationMap(QtWidgets.QMainWindow):
                         self.StartShape.setPen(QPen(self.black))
                         self.StartShape.setBrush(QBrush(self.blue, Qt.SolidPattern))
                         self.scene.addItem(self.StartShape)
-                        # Update the start and end node for the Algorithms 
-                        self.updateStartEndForAlgs()
 
 
                 elif self.CursorState ==2: #Place End
@@ -287,16 +336,16 @@ class SimulationMap(QtWidgets.QMainWindow):
 
                     if (col < 1):
                         col = 1
-                    elif (col > self.GridCells - 1):
-                        col = self.GridCells - 1
+                    elif (col > self.GridCellsGui - 1):
+                        col = self.GridCellsGui - 1
                     if (row < 1):
                         row = 1
-                    elif (row > self.GridCells - 1):
-                        row = self.GridCells - 1
+                    elif (row > self.GridCellsGui - 1):
+                        row = self.GridCellsGui - 1
 
                     SelectedNode = self.MapGui[row][col]
-                    if (SelectedNode != self.StartPoint):
-                        self.EndPoint = SelectedNode
+                    if (SelectedNode != self.StartGui):
+                        self.EndGui = SelectedNode
                         # print("SELETED NEW END HERE")
                         # print(self.EndPoint.row, self.EndPoint.column)
                         x = SelectedNode.xcoord
@@ -306,8 +355,6 @@ class SimulationMap(QtWidgets.QMainWindow):
                         self.EndShape.setPen(QPen(self.black))
                         self.EndShape.setBrush(QBrush(self.red, Qt.SolidPattern))
                         self.scene.addItem(self.EndShape)
-                        # Update the start and end node for the Algorithms 
-                        self.updateStartEndForAlgs()
 
                 elif self.CursorState==4:
                     object = self.scene.itemAt(event.scenePos().x(), event.scenePos().y(), QTransform())
@@ -401,49 +448,48 @@ class SimulationMap(QtWidgets.QMainWindow):
                 self.scene.removeItem(self.TranslatedShape.getGuiObject())
 
     def makeFieldMap(self):
-        self.GridCells = 160
         self.ClearSearch()
         self.ClearObs()
-        self.pixelsPerCell = 5
+        self.pixelsPerCell = self.Graphicsheight/self.GridCellsGui
         self.scene = QGraphicsScene()
         self.scene.mousePressEvent = self.mapClickEventHandler  # allows for the grid to be clicked
         self.GridView.setMouseTracking(True)
         self.scene.mouseMoveEvent = self.MouseMovementEvent
         self.GridView.setScene(self.scene)
         #draw box
-        line = QLineF(-1, -1, self.Graphicswidth, -1)
+        line = QLineF(-2, -2, self.Graphicswidth, -2)
         self.scene.addLine(line, self.black)
-        line = QLineF(-1, self.Graphicsheight, self.Graphicswidth, self.Graphicsheight)
+        line = QLineF(-2, self.Graphicsheight, self.Graphicswidth, self.Graphicsheight)
         self.scene.addLine(line, self.black)
-        line = QLineF(self.Graphicswidth, -1, self.Graphicswidth, self.Graphicsheight)
+        line = QLineF(self.Graphicswidth, -2, self.Graphicswidth, self.Graphicsheight)
         self.scene.addLine(line, self.black)
-        line = QLineF(-1, -1, -1, self.Graphicsheight+1)
+        line = QLineF(-2, -2, -2, self.Graphicsheight)
         self.scene.addLine(line, self.black)
 
-        #Make Grid (5 Pixel length squares)
+
         self.MapGui = []
-        ycord = 2
-        NumCells = int(self.Graphicswidth/5)
-        for i in range(0, NumCells):
+        ycord = int(self.pixelsPerCell/2)
+
+        for i in range(0, self.GridCellsGui):
             row = []
-            xcord = 2
-            for j in range(0, NumCells):
+            xcord = int(self.pixelsPerCell/2)
+            for j in range(0, self.GridCellsGui):
                 row.append(Node(xcord, ycord, i, j))
-                xcord += 5
+                xcord += self.pixelsPerCell
             self.MapGui.append(row)
-            ycord += 5
+            ycord += self.pixelsPerCell
 
 
         # initialize start
-        self.StartPoint = self.MapGui[1][1]
-        self.StartShape = QGraphicsEllipseItem(self.StartPoint.xcoord-5, self.StartPoint.ycoord-5, 10, 10)
+        self.StartGui = self.MapGui[1][1]
+        self.StartShape = QGraphicsEllipseItem(self.StartGui.xcoord - self.pixelsPerCell, self.StartGui.ycoord - self.pixelsPerCell, 10, 10)
         self.StartShape.setPen(QPen(self.black))
         self.StartShape.setBrush(QBrush(self.blue, Qt.SolidPattern))
         self.scene.addItem(self.StartShape)
 
         #initialize end
-        self.EndPoint = self.MapGui[NumCells - 2][NumCells - 2]
-        self.EndShape = QGraphicsEllipseItem(self.EndPoint.xcoord-5, self.EndPoint.ycoord-5, 10, 10)
+        self.EndGui = self.MapGui[self.GridCellsGui - 2][self.GridCellsGui - 2]
+        self.EndShape = QGraphicsEllipseItem(self.EndGui.xcoord - self.pixelsPerCell, self.EndGui.ycoord - self.pixelsPerCell, 10, 10)
         self.EndShape.setPen(QPen(self.black))
         self.EndShape.setBrush(QBrush(self.red, Qt.SolidPattern))
         self.scene.addItem(self.EndShape)
@@ -477,7 +523,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.scene.removeItem(Shape)
         self.fieldObstacleList = []
 
-    def generateNodeMap(self, size, numCells):# make num cells 80 for simplicity and prevent loss of map details, do not exceed grid cell size 160
+    def generateNodeMap(self, size, numCells):# make num cells between 80 and 160 for simplicity and prevent loss of map details, do not exceed grid cell size 160
         self.MapNode = []
         for i in range(0, numCells):
             row = []
@@ -495,8 +541,119 @@ class SimulationMap(QtWidgets.QMainWindow):
                         if item.getGuiObject() == Shape:
                             self.MapNode[i][j].setEnvironmentType(item.TerrainType)
                             break
-        self.updateMapForAlgs()
-        print ("updated environments")
+                else:
+                    self.MapNode[i][j].setEnvironmentType("Concrete") #default is concrete
+
+        self.StartNode = self.MapNode[int(self.StartGui.row * numCells / self.GridCellsGui)][int(self.StartGui.column * numCells / self.GridCellsGui)]
+        self.EndNode = self.MapNode[int(self.EndGui.row * numCells / self.GridCellsGui)][int(self.EndGui.column * numCells / self.GridCellsGui)]
+        print("updated environments")
+
+    def algSelectCallback(self):
+        text = self.AlgorithmSelect.currentText()
+        if text == "Shared MultiHeuristic A*":
+            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*")
+            self.isAlgorithmMultiQueue = False
+        elif text == "Shared MultiHeuristic Greedy Best First Search":
+            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHGBFS")
+            self.isAlgorithmMultiQueue = False
+        elif text == "Individual Greedy DTS":
+            self.isAlgorithmMultiQueue = True
+            pass #TODO add greedy DTS
+        elif text == "Individual A* DTS":
+            self.isAlgorithmMultiQueue = True
+            pass #TODO add A* DTS
+
+        # Callback for Alg Thread
+
+    def UpdateMap(self, result):
+        # result in general form [Boolean:Done, List:AddedExploration, List:AddedFrontier, List:Path, Int:NumExpansions]
+        if self.isAlgorithmMultiQueue == False:
+            self.NumExpLBL.setText("# Expansions: " + str(result[4]))
+            if (result[0] == True):
+                for item in result[3]:
+                    SelectedNode = item
+                    x = SelectedNode.column * self.pixelsPerCellNode
+                    y = SelectedNode.row * self.pixelsPerCellNode
+                    shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                    shape.setTransformOriginPoint(QPoint(x, y))
+                    shape.setPen(QPen(self.purple))
+                    shape.setBrush(QBrush(self.purple, Qt.SolidPattern))
+                    shape.setOpacity(0.5)
+                    self.SharedQueueScene.addItem(shape)
+                self.SimRunning = False
+            else:
+                for item in result[1]:
+                    SelectedNode = item
+                    if (SelectedNode != self.EndNode and SelectedNode != self.StartNode):
+                        x = SelectedNode.column * self.pixelsPerCellNode
+                        y = SelectedNode.row * self.pixelsPerCellNode
+                        shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                        shape.setTransformOriginPoint(QPoint(x, y))
+                        shape.setPen(QPen(self.green))
+                        shape.setBrush(QBrush(self.green, Qt.SolidPattern))
+                        shape.setOpacity(0.5)
+                        self.SharedQueueScene.addItem(shape)
+                for item in result[2]:
+                    SelectedNode = item
+                    if (SelectedNode != self.EndNode and SelectedNode != self.StartNode):
+                        x = SelectedNode.column*self.pixelsPerCellNode
+                        y = SelectedNode.row*self.pixelsPerCellNode
+                        shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                        shape.setTransformOriginPoint(QPoint(x, y))
+                        shape.setPen(QPen(self.yellow))
+                        shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
+                        shape.setOpacity(0.5)
+                        self.SharedQueueScene.addItem(shape)
+
+    def constructSharedQueueAnimationScene(self):
+        print("Constructing new scene")
+        self.pixelsPerCellNode = self.Graphicsheight/self.GridCellsSimulation
+        self.SharedQueueScene = QGraphicsScene()
+        self.GridView.setScene(self.SharedQueueScene)
+        # draw box
+        line = QLineF(-1, -1, self.Graphicswidth+1, -1)
+        self.SharedQueueScene.addLine(line, self.black)
+        line = QLineF(-1, self.Graphicsheight+1, self.Graphicswidth+1, self.Graphicsheight+1)
+        self.SharedQueueScene.addLine(line, self.black)
+        line = QLineF(self.Graphicswidth+1, -1, self.Graphicswidth+1, self.Graphicsheight+1)
+        self.SharedQueueScene.addLine(line, self.black)
+        line = QLineF(-1, -1, -1, self.Graphicsheight + 1)
+        self.SharedQueueScene.addLine(line, self.black)
+
+
+        #Add terrain from MapNode
+        for rows in self.MapNode:
+            for col in rows:
+                TerrainType = col.Environment
+                if TerrainType == "Water":
+                    CurrentTerrainObject = Water(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNodel+self.pixelsPerCellNodel/2)
+                elif TerrainType == "Mud":
+                    CurrentTerrainObject = Mud(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                elif TerrainType == "Concrete":
+                    CurrentTerrainObject = Concrete(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                elif TerrainType == "Sand":
+                    CurrentTerrainObject = Sand(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                elif TerrainType == "Tree":
+                    CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNodel/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                else:
+                    CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                self.SharedQueueScene.addItem(CurrentTerrainObject.getGuiObject())
+
+                # Place Start
+            self.StartShapeShared = QGraphicsEllipseItem(self.StartNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                         self.StartNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+                                                         10)
+            self.StartShapeShared.setPen(QPen(self.black))
+            self.StartShapeShared.setBrush(QBrush(self.blue, Qt.SolidPattern))
+            self.SharedQueueScene.addItem(self.StartShapeShared)
+
+            # Place End
+            self.EndShapeShared = QGraphicsEllipseItem(self.EndNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                       self.EndNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+                                                       10)
+            self.EndShapeShared.setPen(QPen(self.black))
+            self.EndShapeShared.setBrush(QBrush(self.red, Qt.SolidPattern))
+            self.SharedQueueScene.addItem(self.EndShapeShared)
 
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
@@ -506,7 +663,45 @@ class AlgorithmThread(QThread):
         self.gui = gui
 
     def run(self):
-        pass
+        Done = False # Becomes True when goal is found
+        if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
+            self.gui.StartNode.CostToTravel = 0
+            FrontierQueue = [self.gui.StartNode]
+            ExploredQueue = []
+            Path = []
+            numExp = 0
+
+            while (Done == False):
+                time.sleep(self.gui.SimSpeed)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
+                if (GoalFound):
+                    Done = True
+                    print("Found Goal")
+                elif (QueueEmpty):
+                    Done = True
+                    print("Queue Empty")
+                numExp += 1
+                self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, numExp])
+                ExploredQueue.append(NewExploredNode)
+
+            #finds path for GUI and to be sent to Turtle Bot
+            if (self.gui.EndNode.parent is not None):
+                StartReached = False
+                CurrentNode = self.gui.EndNode.parent
+                while (StartReached == False):
+
+                    if (CurrentNode == self.gui.StartNode):
+                        StartReached = True
+                    else:
+                        Path.append(CurrentNode)
+                        CurrentNode = CurrentNode.parent
+
+                Path.reverse()
+                self.gui.Path = Path
+                self.signal.emit([True, [], [], Path, numExp])
+            else:
+                self.signal.emit([True, [], [], [], numExp])
+            print("Done")
 
 
 if __name__ == '__main__':
