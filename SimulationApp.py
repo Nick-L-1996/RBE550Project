@@ -130,7 +130,7 @@ class SimulationMap(QtWidgets.QMainWindow):
     def chooseQueue(self):
         key = self.QueueSelect.currentText()
         print("Current View =" + key)
-        self.GridView.setScene(self.MapNodeIndividual[key])
+        self.GridView.setScene(self.IndividualQueueScenes[key])
     def SetSimSpeed(self):
         text = self.SimSpeedCB.currentText()
         if text == "1x":
@@ -164,20 +164,20 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.SimRunning = True
         text = self.AlgorithmSelect.currentText()
         if text == "Shared MultiHeuristic A*":
+            self.constructSharedQueueAnimationScene()
             self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None) #update algorithm with new values
-            self.constructSharedQueueAnimationScene()
         elif text == "Shared MultiHeuristic Greedy Best First Search":
-            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None)  # update algorithm with new values
             self.constructSharedQueueAnimationScene()
+            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None)  # update algorithm with new values
         elif text == "Individual Greedy DTS":
             self.constructIndependentQueueAnimationScene()
-            # TODO add greedy DTS
+            self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
         elif text == "Individual A* DTS":
             self.constructIndependentQueueAnimationScene()
-            # TODO add A* DTS
+            self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
         self.StatusLabel.setText("Status: Running")
 
-        #self.AlgThread.start()
+        self.AlgThread.start()
 
     def saveMap(self):
         name = self.SaveNameEntry.text()
@@ -570,17 +570,20 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHGBFS")
             self.isAlgorithmMultiQueue = False
         elif text == "Individual Greedy DTS":
-            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual, self.EndNodeIndividual, scheduler="DTSGreedy")
+            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual, self.EndNodeIndividual, algorithm="DTSGreedy")
             self.isAlgorithmMultiQueue = True
-            pass #TODO add greedy DTS
         elif text == "Individual A* DTS":
+            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual,self.EndNodeIndividual, algorithm="DTSA*")
             self.isAlgorithmMultiQueue = True
-            pass #TODO add A* DTS
 
-        # Callback for Alg Thread
 
+    # Callback for Alg Thread
     def UpdateMap(self, result):
         # result in general form [Boolean:Done, List:AddedExploration, List:AddedFrontier, List:Path, Int:NumExpansions]
+
+        #################################################################################################
+        # Shared Queue
+        ################################################################################################
         if self.isAlgorithmMultiQueue == False:
             self.NumExpLBL.setText("# Expansions: " + str(result[4]))
             if (result[0] == True):
@@ -619,6 +622,51 @@ class SimulationMap(QtWidgets.QMainWindow):
                         shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
                         shape.setOpacity(0.5)
                         self.SharedQueueScene.addItem(shape)
+
+        #################################################################################################
+        # Independent Queue
+        ################################################################################################
+        elif self.isAlgorithmMultiQueue == True:
+            self.NumExpLBL.setText("# Expansions: " + str(result[4]))
+            if (result[0] == True):
+                PathKey = result[3][0]
+                self.Path = result[3][1]
+                for item in result[3][1]:
+                    SelectedNode = item
+                    x = SelectedNode.column * self.pixelsPerCellNode
+                    y = SelectedNode.row * self.pixelsPerCellNode
+                    shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                    shape.setTransformOriginPoint(QPoint(x, y))
+                    shape.setPen(QPen(self.purple))
+                    shape.setBrush(QBrush(self.purple, Qt.SolidPattern))
+                    shape.setOpacity(0.5)
+                    self.IndividualQueueScenes[PathKey].addItem(shape)
+                self.SimRunning = False
+            else:
+                for key in result[1].keys():
+                    for item in result[1][key]:
+                        SelectedNode = item
+                        if (SelectedNode != self.EndNodeIndividual[key] and SelectedNode != self.StartNodeIndividual[key]):
+                            x = SelectedNode.column * self.pixelsPerCellNode
+                            y = SelectedNode.row * self.pixelsPerCellNode
+                            shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                            shape.setTransformOriginPoint(QPoint(x, y))
+                            shape.setPen(QPen(self.green))
+                            shape.setBrush(QBrush(self.green, Qt.SolidPattern))
+                            shape.setOpacity(0.5)
+                            self.IndividualQueueScenes[key].addItem(shape)
+                for key in result[1].keys():
+                    for item in result[2][key]:
+                        SelectedNode = item
+                        if (SelectedNode != self.EndNodeIndividual[key] and SelectedNode != self.StartNodeIndividual[key]):
+                            x = SelectedNode.column * self.pixelsPerCellNode
+                            y = SelectedNode.row * self.pixelsPerCellNode
+                            shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                            shape.setTransformOriginPoint(QPoint(x, y))
+                            shape.setPen(QPen(self.yellow))
+                            shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
+                            shape.setOpacity(0.5)
+                            self.IndividualQueueScenes[key].addItem(shape)
 
     def constructSharedQueueAnimationScene(self):
         print("Constructing new scene")
@@ -681,7 +729,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         for key in self.CurrentAlgorithm.Queues.keys():
 
             print("Constructing new scene")
-            self.IndividualQueueScenes[key] =  QGraphicsScene()
+            self.IndividualQueueScenes[key] = QGraphicsScene()
             # draw box
             line = QLineF(-1, -1, self.Graphicswidth+1, -1)
             self.IndividualQueueScenes[key].addLine(line, self.black)
@@ -698,7 +746,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                 for col in rows:
                     TerrainType = col.Environment
                     if TerrainType == "Water":
-                        CurrentTerrainObject = Water(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNodel+self.pixelsPerCellNodel/2)
+                        CurrentTerrainObject = Water(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                     elif TerrainType == "Mud":
                         CurrentTerrainObject = Mud(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                     elif TerrainType == "Concrete":
@@ -706,7 +754,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                     elif TerrainType == "Sand":
                         CurrentTerrainObject = Sand(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                     elif TerrainType == "Tree":
-                        CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNodel/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
+                        CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                     else:
                         CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                     self.IndividualQueueScenes[key].addItem(CurrentTerrainObject.getGuiObject())
@@ -727,10 +775,14 @@ class SimulationMap(QtWidgets.QMainWindow):
                 self.EndShapeShared.setBrush(QBrush(self.red, Qt.SolidPattern))
                 self.IndividualQueueScenes[key].addItem(self.EndShapeShared)
             self.MapNodeIndividual[key] = copy.deepcopy(self.MapNode)#needs fresh map for each queue
-            self.StartNodeIndividual[key] = copy.deepcopy(self.StartNode)
-            self.EndNodeIndividual[key] = copy.deepcopy(self.EndNode)
+            row = self.StartNode.row
+            col = self.StartNode.column
+            self.StartNodeIndividual[key] = self.MapNodeIndividual[key][row][col] #makes sure references line up
+            row = self.EndNode.row
+            col = self.EndNode.column
+            self.EndNodeIndividual[key] = self.MapNodeIndividual[key][row][col] #makes sure references line up
             self.QueueSelect.addItem(key)
-        self.GridView.setScene(self.SharedQueueScene)
+        self.chooseQueue()
 
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
@@ -742,13 +794,15 @@ class AlgorithmThread(QThread):
     def run(self):
         try:
             Done = False # Becomes True when goal is found
+            #################################################################################################
+            # Shared Queue
+            ################################################################################################
             if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
                 self.gui.StartNode.CostToTravel = 0
                 FrontierQueue = [self.gui.StartNode]
                 ExploredQueue = []
                 Path = []
                 numExp = 0
-
                 while (Done == False):
                     time.sleep(self.gui.SimSpeed)
                     GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
@@ -780,8 +834,62 @@ class AlgorithmThread(QThread):
                 else:
                     self.signal.emit([True, [], [], [], numExp])
                 print("Done")
+            #################################################################################################
+            #Multi Queue
+            ################################################################################################
             elif self.gui.isAlgorithmMultiQueue == True:
-                pass
+                FrontierQueue = {}
+                ExploredQueue = {}
+                Path = []  # Only one path
+                numExp = 0
+                for key in self.gui.CurrentAlgorithm.Queues.keys():
+                    self.gui.StartNodeIndividual[key].CostToTravel = 0
+                    FrontierQueue[key] = [self.gui.StartNodeIndividual[key]]
+                    ExploredQueue[key] = []
+
+                GoalKey = None
+                while (Done == False):
+                    time.sleep(self.gui.SimSpeed)
+                    GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(
+                        ExploredQueue, FrontierQueue)
+                    isGoalFound = False
+                    isQueueEmpty = True
+                    for key in self.gui.CurrentAlgorithm.Queues.keys():
+                        if GoalFound[key]:
+                            GoalKey = key
+                        isGoalFound = isGoalFound | GoalFound[key] # ors all booleans for Done in each queue. If one is True algorithm is done
+                        isQueueEmpty = isQueueEmpty & QueueEmpty[key] # if all queues are empty algorithm is done
+                        for item in NewExploredNode[key]:
+                            ExploredQueue[key].append(item)
+
+                    if (isGoalFound):
+                        Done = True
+                        print("Found Goal")
+                    #Need to check if all Queues are empty
+                    elif (isQueueEmpty):
+                        Done = True
+                        print("Queue Empty")
+                    numExp += newnumExp
+                    self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, numExp])
+
+                # finds path for GUI and to be sent to Turtle Bot
+                if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
+                    StartReached = False
+                    CurrentNode = self.gui.EndNodeIndividual[GoalKey].parent
+                    while (StartReached == False):
+
+                        if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
+                            StartReached = True
+                        else:
+                            Path.append(CurrentNode)
+                            CurrentNode = CurrentNode.parent
+
+                    Path.reverse()
+                    self.gui.Path = Path
+                    self.signal.emit([True, {}, {}, [GoalKey, Path], numExp])
+                else:
+                    self.signal.emit([True, {}, {}, [], numExp])
+                print("Done")
 
         except Exception as e:
             print("Please Click 'Run Gazebo', then hit Run. The world is empty right now")
