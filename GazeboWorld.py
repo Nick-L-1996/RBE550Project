@@ -16,6 +16,36 @@ class GazeboWorld:
         self.tree = xml.ElementTree(self.root)
         self.world = self.makeEmptyWorld()
 
+        # open the turtlebot3 urdf xacro as writable file
+        self.tbTree = xml.ElementTree(file="turtlebot3_burger.urdf.xacro")
+        self.tbRoot = self.tbTree.getroot()
+    
+
+    def changeTB3Origin(self, pose):
+        #return the first instance of the word origin (this is the one we want, it's part of base_joint)
+        print (self.tbRoot)
+        tbJoint = self.tbRoot.find("joint")
+        tbOrigin = tbJoint.find("origin")
+        #set the XYZ and Roll Pitch, Yaw
+        tbOrigin.set('xyz', str(pose[0]) + " " + str(pose[1]) + " " + "0.010")
+        tbOrigin.set('rpy', "0.0" + " " + "0.0" + " " + str(pose[2]))
+        
+        #write to same file name
+        self.writeFile("turtlebot3_burger.urdf.xacro", self.tbTree)
+        pass
+
+    def getPathCoordinates(self, path):
+        # Take in the path from the sim app containing the nodes
+        desiredRobotPoints = []
+        for i in range(len(path)):
+            # grab xy coordinates from each node and shift to Gazebo (Or actually RViz??????) Units
+            # this is where the robot should go
+            nodeX = path[i].xcoord
+            nodeY = path[i].ycoord
+            # add these shifted coordinates into the array keeping track of gazebo (OR RVIZ??????) world 
+            desiredRobotPoints.append(self.shiftSimToGazebo(nodeX, nodeY)) ## Might have to be RVIZ?????
+        pass
+    
     def makeEmptyWorld(self):
         world = xml.SubElement(self.root, 'world')
         world.set('name', 'default')
@@ -139,7 +169,7 @@ class GazeboWorld:
             name = str(material) + "_" + str(i)
             self.makeCellTile(tilePose, shape, dim, material, name)
         print("Generated File")
-        self.writeFile("test_world.world")
+        self.writeFile("test_world.world", self.tree)
         try:
             process = subprocess.Popen(['gazebo', 'test_world.world'],
                                    stdout=subprocess.PIPE,
@@ -272,9 +302,10 @@ class GazeboWorld:
         grav = xml.SubElement(link, "gravity")
         grav.text = str(1)
 
-    def writeFile(self, filename):
+    def writeFile(self, filename, tree):
         with open(filename, "wb") as fh:
-            self.tree.write(fh)
+            tree.write(fh)
+
     def createCircle(self, tag, radius):
         cylinder = xml.SubElement(tag, "cylinder")
         radius1 = xml.SubElement(cylinder, "radius")
