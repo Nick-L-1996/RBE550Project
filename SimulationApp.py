@@ -656,7 +656,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                 self.SimRunning = False
             else:
                 for key in result[1].keys():
-                    if(result[1][key]) != []:
+                    if(result[1][key]) != [] or (result[2][key]) != []: #automatically change view
                         index = self.QueueSelect.findText(key, QtCore.Qt.MatchFixedString)
                         self.QueueSelect.setCurrentIndex(index)
                         self.chooseQueue()
@@ -672,10 +672,6 @@ class SimulationMap(QtWidgets.QMainWindow):
                             shape.setOpacity(0.5)
                             self.IndividualQueueScenes[key].addItem(shape)
                 for key in result[1].keys():
-                    if (result[1][key]) != []:
-                        index = self.QueueSelect.findText(key, QtCore.Qt.MatchFixedString)
-                        self.QueueSelect.setCurrentIndex(index)
-                        self.chooseQueue()
                     for item in result[2][key]:
                         SelectedNode = item
                         if (SelectedNode != self.EndNodeIndividual[key] and SelectedNode != self.StartNodeIndividual[key]):
