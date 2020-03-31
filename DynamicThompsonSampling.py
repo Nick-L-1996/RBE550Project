@@ -20,7 +20,8 @@ class DTS_SchedulerIndependent(SchedulerIndependent):
         bestProb = self.DTSQueues[0].betaDistribution()
         print(bestProb)
         for queue in range(1, len(self.DTSQueues)):
-            prob = self.DTSQueues[queue].betaDistribution()
+            #prob = self.DTSQueues[queue].betaDistribution()
+            prob = self.DTSQueues[queue].betaDistribution2(0.75) # find proability of 75% success rate
             print(prob)
             if prob>bestProb:
                 bestProb = prob
@@ -79,3 +80,6 @@ class DTSQueueObject:
                 xval = xnew
         return xval
 
+    #this seems to work better than betaDistribution ^^^
+    def betaDistribution2(self, xnew): # returns the highest probability density at a given point
+        return np.power(xnew, self.alpha-1)*np.power((1-xnew), self.beta-1)#beta distribution function

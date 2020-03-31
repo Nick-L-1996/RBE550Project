@@ -221,7 +221,7 @@ class SimulationMap(QtWidgets.QMainWindow):
     def ClearSearch(self):
         print("Clearing Search")
         self.StatusLabel.setText("Status: Ready")
-
+        self.QueueSelect.clear()
         self.NumExpLBL.setText("# Expansions: 0")
         self.GridView.setScene(self.scene)
     def circleSel(self):
@@ -631,6 +631,9 @@ class SimulationMap(QtWidgets.QMainWindow):
             if (result[0] == True):
                 PathKey = result[3][0]
                 self.Path = result[3][1]
+                index = self.QueueSelect.findText(PathKey, QtCore.Qt.MatchFixedString)
+                self.chooseQueue()
+                self.QueueSelect.setCurrentIndex(index)
                 for item in result[3][1]:
                     SelectedNode = item
                     x = SelectedNode.column * self.pixelsPerCellNode
@@ -644,6 +647,10 @@ class SimulationMap(QtWidgets.QMainWindow):
                 self.SimRunning = False
             else:
                 for key in result[1].keys():
+                    if(result[1][key]) != []:
+                        index = self.QueueSelect.findText(key, QtCore.Qt.MatchFixedString)
+                        self.QueueSelect.setCurrentIndex(index)
+                        self.chooseQueue()
                     for item in result[1][key]:
                         SelectedNode = item
                         if (SelectedNode != self.EndNodeIndividual[key] and SelectedNode != self.StartNodeIndividual[key]):
@@ -656,6 +663,10 @@ class SimulationMap(QtWidgets.QMainWindow):
                             shape.setOpacity(0.5)
                             self.IndividualQueueScenes[key].addItem(shape)
                 for key in result[1].keys():
+                    if (result[1][key]) != []:
+                        index = self.QueueSelect.findText(key, QtCore.Qt.MatchFixedString)
+                        self.QueueSelect.setCurrentIndex(index)
+                        self.chooseQueue()
                     for item in result[2][key]:
                         SelectedNode = item
                         if (SelectedNode != self.EndNodeIndividual[key] and SelectedNode != self.StartNodeIndividual[key]):
