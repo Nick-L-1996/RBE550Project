@@ -17,22 +17,31 @@ class GazeboWorld:
         self.world = self.makeEmptyWorld()
 
         # open the turtlebot3 urdf xacro as writable file
-        self.tbTree = xml.ElementTree(file="turtlebot3_burger.urdf.xacro")
-        self.tbRoot = self.tbTree.getroot()
+        try:
+            self.tbTree = xml.ElementTree(file="turtlebot3_burger.urdf.xacro")
+            self.tbRoot = self.tbTree.getroot()
+        except:
+            print("Turtlebot 3 data missing")
+            self.tbTree = "None"
+            self.tbRoot = "None"
+
     
 
     def changeTB3Origin(self, pose):
-        #return the first instance of the word origin (this is the one we want, it's part of base_joint)
-        print (self.tbRoot)
-        tbJoint = self.tbRoot.find("joint")
-        tbOrigin = tbJoint.find("origin")
-        #set the XYZ and Roll Pitch, Yaw
-        tbOrigin.set('xyz', str(pose[0]) + " " + str(pose[1]) + " " + "0.010")
-        tbOrigin.set('rpy', "0.0" + " " + "0.0" + " " + str(pose[2]))
-        
-        #write to same file name
-        self.writeFile("turtlebot3_burger.urdf.xacro", self.tbTree)
-        pass
+        try:
+            #return the first instance of the word origin (this is the one we want, it's part of base_joint)
+            print (self.tbRoot)
+            tbJoint = self.tbRoot.find("joint")
+            tbOrigin = tbJoint.find("origin")
+            #set the XYZ and Roll Pitch, Yaw
+            tbOrigin.set('xyz', str(pose[0]) + " " + str(pose[1]) + " " + "0.010")
+            tbOrigin.set('rpy', "0.0" + " " + "0.0" + " " + str(pose[2]))
+
+            #write to same file name
+            self.writeFile("turtlebot3_burger.urdf.xacro", self.tbTree)
+        except:
+            print("Can't run Gazebo")
+
 
     def getPathCoordinates(self, path):
         # Take in the path from the sim app containing the nodes
