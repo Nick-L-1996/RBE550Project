@@ -1,0 +1,4 @@
+TODO: 
+Make 2dNav goal work without AMCL. Right now, AMCL needs an already built map. Can we just use odometry?
+
+I think we need something like this: https://answers.ros.org/question/201806/how-to-navigate-without-localization/

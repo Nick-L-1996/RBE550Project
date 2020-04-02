@@ -239,6 +239,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
         startGazeboCoords = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
         # enter starting x y theta
+
         self.GazeboWorld.changeTB3Origin([startGazeboCoords[0],startGazeboCoords[1], 0])
         # tilePose = self.GazeboWorld.shiftSimToGazebo(startGazeboCoords[0], startGazeboCoords[1])
         # material = "Trees"
@@ -889,6 +890,24 @@ class AlgorithmThread(QThread):
                     self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, numExp])
 
                 # finds path for GUI and to be sent to Turtle Bot
+                """
+                1) Initially, we make take the start node and shift it to gazebo units the same way we place obstacles in Gazebo
+
+                2) Now, for each node in the path, we're going to want to shift the x and y coordinates into Gazebo units (or RVIZ)
+                3) So, now we have the XY Coordinates of the nodes in the path in Gazebo units
+                4) We want to send this information to some tool (NavStack, or something else), that will move the robot along the path
+
+                4/1 to 4/9:
+                If we can use the NavStack (probably)
+                    -- Let's just try to get the robot moving from origin to clicked point in RVIZ
+                    -- try to shift XY from sim world to RVIZ XY
+                    -- sequentially send points to go to from Python
+                    -- integrate into 550 Project
+
+                Use pickle to write 'Path' object, so ROS can unpack it. 
+
+                Else: Do it ourselvese (probably won't have to)
+                """
                 if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
                     StartReached = False
                     CurrentNode = self.gui.EndNodeIndividual[GoalKey].parent
