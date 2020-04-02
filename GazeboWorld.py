@@ -180,11 +180,19 @@ class GazeboWorld:
         print("Generated File")
         self.writeFile("test_world.world", self.tree)
         try:
-            process = subprocess.Popen(['gazebo', 'test_world.world'],
-                                   stdout=subprocess.PIPE,
-                                   universal_newlines=True)
+            #Launch launch file
+            process = subprocess.Popen(['roslaunch', 'turtlebot3_navigation', 'tb_eismha.launch'],
+                                    stdout=subprocess.PIPE,
+                                    universal_newlines=True)
+            pass
         except:
-            print("Gazebo Not Installed")
+            print("ROS Not Installed")
+        # try:
+        #     process = subprocess.Popen(['gazebo', 'test_world.world'],
+        #                            stdout=subprocess.PIPE,
+        #                            universal_newlines=True)
+        # except:
+        #     print("Gazebo Not Installed")
 
     # add block to gazebo world
     # dim - 1x3 (length,width,height)

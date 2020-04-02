@@ -21,7 +21,7 @@ class DTS_SchedulerIndependent(SchedulerIndependent):
         print(bestProb)
         for queue in range(1, len(self.DTSQueues)):
             #prob = self.DTSQueues[queue].betaDistribution()
-            prob = self.DTSQueues[queue].betaDistribution2(0.75) # find proability of 75% success rate
+            prob = self.DTSQueues[queue].betaDistribution2(0.75) # find proability of 75% of getting rewarded again
             print(prob)
             if prob>bestProb:
                 bestProb = prob
