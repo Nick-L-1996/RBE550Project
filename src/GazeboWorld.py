@@ -10,6 +10,7 @@ import xml.etree.ElementTree as xml
 import subprocess
 from PathServer import *
 
+
 class GazeboWorld:  
     def __init__(self, path = None):
         self.root = xml.Element('sdf')
