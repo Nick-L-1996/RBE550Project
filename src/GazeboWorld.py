@@ -9,8 +9,9 @@ To run the product of this code, navigate to this directory and run: "gazebo  [f
 import xml.etree.ElementTree as xml
 import subprocess
 
+
 class GazeboWorld:  
-    def __init__(self):
+    def __init__(self, path = None):
         self.root = xml.Element('sdf')
         self.root.set('version', '1.6')
         self.tree = xml.ElementTree(self.root)
@@ -181,10 +182,15 @@ class GazeboWorld:
         self.writeFile("test_world.world", self.tree)
         try:
             #Launch launch file
-            process = subprocess.Popen(['roslaunch', 'turtlebot3_navigation', 'tb_eismha.launch'],
-                                    stdout=subprocess.PIPE,
-                                    universal_newlines=True)
-            pass
+            # process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch'],
+            #                         stdout=subprocess.PIPE,
+            #                         universal_newlines=True)
+            # process2 = subprocess.Popen(['rosrun', 'RBE550Project', 'turtlebotController.py'],
+            #                     stdout=subprocess.PIPE,
+            #                     universal_newlines=True)
+            process3 = subprocess.Popen(['rosrun', 'RBE550Project', 'PathServer.py'],
+                                stdout=subprocess.PIPE,
+                                universal_newlines=True)
         except:
             print("ROS Not Installed")
         # try:

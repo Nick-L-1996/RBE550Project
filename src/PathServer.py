@@ -2,28 +2,40 @@
 
 from RBE550Project.srv import GetWaypoint
 from geometry_msgs.msg import Point, Twist
+from Node import *
+import pickle
 import rospy
 import sys
 
 class PathServer():
-    def __init__(self, path):
+    def __init__(self, path_nodes):
         rospy.init_node('path_server')
         # Temporarily, we are making a point, for testing purposes. 
         # Eventually, we will integrate this into the Simulation App
         # TODO: Convert Node object into Point object!
-        
+        print("Initializing server")
         goal1 = Point()
         goal1.x = .1
         goal1.y = .1
-        
-        self.path = [goal1]
-        self.path.reverse()
+
+        # path_nodes = pickle.load(pickle_file)
+
+        self.path = self.fromNodesToPoints(path_nodes)
         
         # Creating Server 
         # GetWaypoint is an object with attribute Waypoint
         self.server = rospy.Service('waypoint_service', GetWaypoint, self.path_server)
         print("Server is created")
         rospy.spin()
+
+
+    def fromNodesToPoints(self, path):
+        path = []
+        for node in path:
+            waypoint = Point(node.xcoord, node.ycoord, 0)
+            print("Added waypoint:", waypoint.x, waypoint.y)
+            path.append(waypoint)
+        return path
 
     # callback to send back a goal message when requested by client
     # we don't need data but when the callback is run it's given by default (it errors otherwise)
@@ -41,5 +53,10 @@ class PathServer():
         return waypoint
 
 if __name__ == "__main__":
+    with open ("FinalPath.pkl","rb") as fileOpener:
+        path = pickle.load(fileOpener)
+    for item in path:
+        print(item)
+    print("opened pickle path file")
     #Instantiates an object of type PathServer 
-    ps = PathServer([]) # needs waypoint list in parameter, empty for testing
+    ps = PathServer(path) # needs waypoint list in parameter, empty for testing
