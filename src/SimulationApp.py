@@ -10,6 +10,7 @@ from Node import Node
 from GazeboWorld import *
 import numpy as np  
 import pickle
+from PathServer import *
 import copy
 from SharedQueueAlgorithm import *
 from IndependentQueueAlgorithm import *
@@ -161,6 +162,15 @@ class SimulationMap(QtWidgets.QMainWindow):
             os.mkdir("MapBuilderMaps")
 
     def runAlg(self):
+        self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation) #Populates Map
+        # for row in self.MapNode:
+        #     for col in row:
+        #         print("[", end=" ")
+        #         print(col.Environment, end=" ")
+        #         print(col.xcoord, end=" ")
+        #         print(col.ycoord, end=" ")
+        #         print("]", end=" ")
+        #     print(",")
         self.SimRunning = True
         text = self.AlgorithmSelect.currentText()
         if text == "Shared MultiHeuristic A*":
@@ -236,10 +246,10 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def GenerateWorld(self):
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
+        self.GazeboWorld.makeGazeboPath(self.Path)
         self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
         startGazeboCoords = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
         # enter starting x y theta
-
         self.GazeboWorld.changeTB3Origin([startGazeboCoords[0],startGazeboCoords[1], 0])
         # tilePose = self.GazeboWorld.shiftSimToGazebo(startGazeboCoords[0], startGazeboCoords[1])
         # material = "Trees"
@@ -247,15 +257,6 @@ class SimulationMap(QtWidgets.QMainWindow):
         # self.GazeboWorld.writeFile("test_world.world", self.tree)'
 
         ## TODO FIX THE GAZEBO WORLD CREATION - DOESN'T SAVE AND OPEN THE WORLD
-        self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation) #Populates Map
-        for row in self.MapNode:
-            for col in row:
-                print("[", end=" ")
-                print(col.Environment, end=" ")
-                print(col.xcoord, end=" ")
-                print(col.ycoord, end=" ")
-                print("]", end=" ")
-            print(",")
 
     def MudSelect(self):
         self.TerrainType = "Mud"

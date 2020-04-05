@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from RBE550Project.srv import GetWaypoint
 from geometry_msgs.msg import Point, Twist
@@ -16,14 +16,23 @@ class PathServer():
         goal1.x = .1
         goal1.y = .1
         
-        self.path = [goal1]
-        self.path.reverse()
+        self.path = self.makePointsFromNodes(path)
+        #self.path.reverse()
         
         # Creating Server 
         # GetWaypoint is an object with attribute Waypoint
         self.server = rospy.Service('waypoint_service', GetWaypoint, self.path_server)
         print("Server is created")
+        [print(i) for i in self.path]
         rospy.spin()
+
+    def makePointsFromNodes(self, path):
+        waypoints = []
+        for node in path:
+            waypoint = Point(node.xcoord, node.ycoord, 0)
+            waypoints.append(waypoint)
+            print(waypoint.x, waypoint.y)
+        return waypoints
 
     # callback to send back a goal message when requested by client
     # we don't need data but when the callback is run it's given by default (it errors otherwise)
