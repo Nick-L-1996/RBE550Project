@@ -8,6 +8,7 @@ To run the product of this code, navigate to this directory and run: "gazebo  [f
 """
 import xml.etree.ElementTree as xml
 import subprocess
+from PathServer import *
 
 
 class GazeboWorld:  
@@ -16,7 +17,7 @@ class GazeboWorld:
         self.root.set('version', '1.6')
         self.tree = xml.ElementTree(self.root)
         self.world = self.makeEmptyWorld()
-
+        self.path = path
         # open the turtlebot3 urdf xacro as writable file
         try:
             self.tbTree = xml.ElementTree(file="turtlebot3_burger.urdf.xacro")
@@ -27,6 +28,10 @@ class GazeboWorld:
             self.tbRoot = "None"
 
     
+    def makeGazeboPath(self, nodePath):
+        self.path = nodePath.copy() 
+        for node in self.path:
+            node.xcoord, node.ycoord = self.shiftSimToGazebo(node.xcoord, node.ycoord)
 
     def changeTB3Origin(self, pose):
         try:
@@ -182,16 +187,17 @@ class GazeboWorld:
         self.writeFile("test_world.world", self.tree)
         try:
             #Launch launch file
-            # process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch'],
-            #                         stdout=subprocess.PIPE,
-            #                         universal_newlines=True)
-            # process2 = subprocess.Popen(['rosrun', 'RBE550Project', 'turtlebotController.py'],
-            #                     stdout=subprocess.PIPE,
-            #                     universal_newlines=True)
-            process3 = subprocess.Popen(['rosrun', 'RBE550Project', 'PathServer.py'],
-                                stdout=subprocess.PIPE,
-                                universal_newlines=True)
-        except:
+            process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch'],
+                                    stdout=subprocess.PIPE,
+                                    universal_newlines=True)
+            process1 = subprocess.Popen(['rosrun', 'RBE550Project', 'turtlebotController.py'],
+                                    stdout=subprocess.PIPE,
+                                    universal_newlines=True)
+            # The server is blocking, so it needs to run last
+            ps = PathServer(self.path)
+
+        except Exception as e:
+            print(str(e))
             print("ROS Not Installed")
         # try:
         #     process = subprocess.Popen(['gazebo', 'test_world.world'],
