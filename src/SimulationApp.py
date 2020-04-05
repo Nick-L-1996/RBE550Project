@@ -250,7 +250,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
         #startGazeboCoords = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
         # enter starting x y theta
-        self.GazeboWorld.changeTB3Origin([startGazeboCoords[0],startGazeboCoords[1], 0])
+        #self.GazeboWorld.changeTB3Origin([startGazeboCoords[0],startGazeboCoords[1], 0])
         # tilePose = self.GazeboWorld.shiftSimToGazebo(startGazeboCoords[0], startGazeboCoords[1])
         # material = "Trees"
         # self.GazeboWorld.makeCellTile(tilePose, "Square", 100, material, "test")        

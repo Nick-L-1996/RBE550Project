@@ -18,7 +18,7 @@ class PathServer():
         goal1.x = .1
         goal1.y = .1
         
-        self.path = self.makePointsFromNodes(path)
+        self.path = self.makePointsFromNodes(path_nodes)
         #self.path.reverse()
         
         # Creating Server 
