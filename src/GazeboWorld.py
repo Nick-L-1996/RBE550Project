@@ -17,6 +17,7 @@ class GazeboWorld:
         self.tree = xml.ElementTree(self.root)
         self.world = self.makeEmptyWorld()
         self.path = path
+        self.start = 0
         # open the turtlebot3 urdf xacro as writable file
         try:
             self.tbTree = xml.ElementTree(file="turtlebot3_burger.urdf.xacro")
@@ -26,6 +27,7 @@ class GazeboWorld:
             self.tbTree = "None"
             self.tbRoot = "None"
 
+    #Make the path into gazebo units
     def makeGazeboUnits(self,path):
         new_path = path.copy()
         for node in new_path:
@@ -186,7 +188,7 @@ class GazeboWorld:
         self.writeFile("test_world.world", self.tree)
         try:
             #Launch launch file which launches: Gazebo map, turtlebot controller, and waypoint service
-            process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch'],
+            process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch', "x_pos:=" + str(self.start[0]), "y_pos:=" + str(self.start[1])],
                                    stdout=subprocess.PIPE,
                                    universal_newlines=True)
 
@@ -335,12 +337,12 @@ class GazeboWorld:
         radius1 = xml.SubElement(cylinder, "radius")
         radius1.text = str(radius)  # set radius
         height = xml.SubElement(cylinder, "length")
-        height.text = str(0.05)  # set fixed height
+        height.text = str(0.0005)  # set fixed height
 
     def createSquare(self, tag, side):
         tile = xml.SubElement(tag, "box")
         size = xml.SubElement(tile, "size")
-        size.text = str(side) + " " + str(side) + " " + str(0.05)
+        size.text = str(side) + " " + str(side) + " " + str(0.005)
 
     def addTexture(self, surfacetag, visualtag, terrain):
         friction = xml.SubElement(surfacetag, 'friction')
