@@ -8,7 +8,6 @@ To run the product of this code, navigate to this directory and run: "gazebo  [f
 """
 import xml.etree.ElementTree as xml
 import subprocess
-from PathServer import *
 
 
 class GazeboWorld:  
@@ -27,12 +26,12 @@ class GazeboWorld:
             self.tbTree = "None"
             self.tbRoot = "None"
 
-    
-    def makeGazeboPath(self, nodePath):
-        self.path = nodePath.copy() 
-        for node in self.path:
+    def makeGazeboUnits(self,path):
+        new_path = path.copy()
+        for node in new_path:
             node.xcoord, node.ycoord = self.shiftSimToGazebo(node.xcoord, node.ycoord)
-
+        return new_path
+        
     def changeTB3Origin(self, pose):
         try:
             #return the first instance of the word origin (this is the one we want, it's part of base_joint)
@@ -186,15 +185,11 @@ class GazeboWorld:
         print("Generated File")
         self.writeFile("test_world.world", self.tree)
         try:
-            #Launch launch file
+            #Launch launch file which launches: Gazebo map, turtlebot controller, and waypoint service
             process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch'],
-                                    stdout=subprocess.PIPE,
-                                    universal_newlines=True)
-            process1 = subprocess.Popen(['rosrun', 'RBE550Project', 'turtlebotController.py'],
-                                    stdout=subprocess.PIPE,
-                                    universal_newlines=True)
-            # The server is blocking, so it needs to run last
-            ps = PathServer(self.path)
+                                   stdout=subprocess.PIPE,
+                                   universal_newlines=True)
+
 
         except Exception as e:
             print(str(e))

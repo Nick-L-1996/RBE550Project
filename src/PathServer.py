@@ -6,29 +6,35 @@ from Node import *
 import pickle
 import rospy
 import sys
+import sys
+from pathlib import Path
 
 class PathServer():
-    def __init__(self, path_nodes):
+    def __init__(self):
         rospy.init_node('path_server')
-        # Temporarily, we are making a point, for testing purposes. 
-        # Eventually, we will integrate this into the Simulation App
-        # TODO: Convert Node object into Point object!
         print("Initializing server")
-        goal1 = Point()
-        goal1.x = .1
-        goal1.y = .1
         
-        self.path = self.makePointsFromNodes(path_nodes)
+        self.path = []
         #self.path.reverse()
-        
+        self.makePath()
         # Creating Server 
         # GetWaypoint is an object with attribute Waypoint
         self.server = rospy.Service('waypoint_service', GetWaypoint, self.path_server)
         print("Server is created")
-        [print(i) for i in self.path]
         rospy.spin()
-        
+
+    def makePath(self):
+        # This method will take the pickle file which containes the map of nodes from the simulation map
+        # unpack it, into a list called path, and pass this path to makePoints from nodes
+        home_path = Path.home()
+        with open (str(home_path) + "/catkin_ws/src/RBE550Project/src/FinalPath.pkl","rb") as fileOpener:
+            path = pickle.load(fileOpener)
+        print("opened pickle path file")
+        self.path = self.makePointsFromNodes(path)
+
     def makePointsFromNodes(self, path):
+        # This method takes the nodes given in the path list, and turns them into a list of "Point" objects
+        # which can be passed to the turtlebot controller
         waypoints = []
         for node in path:
             waypoint = Point(node.xcoord, node.ycoord, 0)
@@ -52,10 +58,5 @@ class PathServer():
         return waypoint
 
 if __name__ == "__main__":
-    with open ("FinalPath.pkl","rb") as fileOpener:
-        path = pickle.load(fileOpener)
-    for item in path:
-        print(item)
-    print("opened pickle path file")
-    #Instantiates an object of type PathServer 
-    ps = PathServer(path) # needs waypoint list in parameter, empty for testing
+    # #Instantiates an object of type PathServer 
+    ps = PathServer() # needs waypoint list in parameter, empty for testing

@@ -246,8 +246,14 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def GenerateWorld(self):
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
-        self.GazeboWorld.makeGazeboPath(self.Path)
+        # this line will turn the node objects into a path that has translated them into Gazebo Units
+        newPath = self.GazeboWorld.makeGazeboUnits(self.Path)
+
+        # This will pickle the final path of nodes so that the path server can access it
+        with open("FinalPath.pkl", 'wb') as saveLocation:
+            pickle.dump(newPath, saveLocation)
         self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
+        
         #startGazeboCoords = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
         # enter starting x y theta
         #self.GazeboWorld.changeTB3Origin([startGazeboCoords[0],startGazeboCoords[1], 0])
