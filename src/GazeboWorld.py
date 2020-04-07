@@ -31,7 +31,7 @@ class GazeboWorld:
     def makeGazeboUnits(self,path):
         new_path = path.copy()
         for node in new_path:
-            node.xcoord, node.ycoord = self.shiftSimToGazebo(node.xcoord, node.ycoord)
+            node.ycoord, node.xcoord = self.shiftSimToGazebo(node.xcoord, node.ycoord)
         return new_path
         
     def changeTB3Origin(self, pose):
@@ -166,6 +166,7 @@ class GazeboWorld:
 
 
     def shiftSimToGazebo(self, x, y):
+        # made y flipped and the offset +50 to start it in the upper left corner
         return [x/7.94 - 50, y/7.94 - 50]
 
     def makeWorldFromList(self, terrainList):
@@ -176,7 +177,7 @@ class GazeboWorld:
         # Grab its x, grab its y
         # Convert X and Y into Gazebo units
         # place down the shape
-            tilePose = self.shiftSimToGazebo(terrainList[i].getX(), terrainList[i].getY())
+            tilePose = self.shiftSimToGazebo(terrainList[i].getY(), terrainList[i].getX())
             if(shape == 'Circle'):
                 dim = (terrainList[i].getobSize()/7.94)/2
             else:
@@ -345,10 +346,10 @@ class GazeboWorld:
         size.text = str(side) + " " + str(side) + " " + str(0.005)
 
     def addTexture(self, surfacetag, visualtag, terrain):
-        friction = xml.SubElement(surfacetag, 'friction')
-        ode = xml.SubElement(friction, 'ode')
-        mu = xml.SubElement(ode, 'mu')
-        mu2 = xml.SubElement(ode, 'mu2')
+        # friction = xml.SubElement(surfacetag, 'friction')
+        # ode = xml.SubElement(friction, 'ode')
+        # mu = xml.SubElement(ode, 'mu')
+        # mu2 = xml.SubElement(ode, 'mu2')
         material = xml.SubElement(visualtag, 'material')
         script = xml.SubElement(material, 'script')
 
@@ -359,24 +360,24 @@ class GazeboWorld:
         name = xml.SubElement(script, 'name')
         if terrain == 'Trees':
             name.text = 'Gazebo/Grass'
-            mu.text = '.35'  # from source above
-            mu2.text = '.35'
+            # mu.text = '.35'  # from source above
+            # mu2.text = '.35'
         if terrain == 'road':
             name.text = 'Gazebo/Road'
-            mu.text = '.72'  # from source above
-            mu2.text = '.72'
+            # mu.text = '.72'  # from source above
+            # mu2.text = '.72'
         if terrain == 'Concrete':
             name.text = 'Gazebo/Residential'
-            mu.text = '.72'  # from source above
-            mu2.text = '.72'
+            # mu.text = '.72'  # from source above
+            # mu2.text = '.72'
         if terrain == 'Mud':
             name.text = 'Gazebo/DarkYellow'  # placeholder
-            mu.text = '0.158'  # estimation
-            mu2.text = '0.158'
+            # mu.text = '0.158'  # estimation
+            # mu2.text = '0.158'
         if terrain == 'Water':
             name.text = 'Gazebo/Blue'  # placeholder
-            mu.text = '0.0001'  # estimation
-            mu2.text = '0.0001'
+            # mu.text = '0.0001'  # estimation
+            # mu2.text = '0.0001'
 
 # world = GazeboWorld()
 # world2 = GazeboWorld()

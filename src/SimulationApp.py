@@ -729,7 +729,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                     CurrentTerrainObject = Trees(self.pixelsPerCellNode, "Square", col.column*self.pixelsPerCellNode+self.pixelsPerCellNode/2, col.row*self.pixelsPerCellNode+self.pixelsPerCellNode/2)
                 self.SharedQueueScene.addItem(CurrentTerrainObject.getGuiObject())
 
-                # Place Start
+            # Place Start
             self.StartShapeShared = QGraphicsEllipseItem(self.StartNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
                                                         self.StartNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
                                                          10)

@@ -31,6 +31,7 @@ class PathServer():
             path = pickle.load(fileOpener)
         print("opened pickle path file")
         self.path = self.makePointsFromNodes(path)
+        self.path.reverse()
 
     def makePointsFromNodes(self, path):
         # This method takes the nodes given in the path list, and turns them into a list of "Point" objects
