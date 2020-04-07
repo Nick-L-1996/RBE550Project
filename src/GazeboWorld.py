@@ -134,7 +134,7 @@ class GazeboWorld:
         mu2.text = '50'
 
         max_contacts = xml.SubElement(collision, 'max_contacts')
-        max_contacts.text = '10'
+        max_contacts.text = '100'
 
         visual = xml.SubElement(link, 'visual')
         visual.set('name', 'visual')
@@ -234,11 +234,20 @@ class GazeboWorld:
         link.set('name', 'link')
 
         # Collision
-        collision = xml.SubElement(link, "collision")
-        collision.set('name', 'collision')
+        # collision = xml.SubElement(link, "collision")
+        # collision.set('name', 'collision')
 
-        # Geometry
-        collision_geometry = xml.SubElement(collision, "geometry")
+        # surface = xml.SubElement(collision, "surface")
+        # surface.set('name', 'surface')
+        
+        # contact = xml.SubElement(surface, "contact")
+        # contact.set('name', 'contact')
+
+        # collide_without_contact = xml.SubElement(contact, "collide_without_contact")
+        # contact.set('name', 'collide_without_contact')
+        # contact.text = 'true'
+        # # Geometry
+        # collision_geometry = xml.SubElement(collision, "geometry")
 
         # Visual
         visual = xml.SubElement(link, "visual")
@@ -249,21 +258,21 @@ class GazeboWorld:
 
         # check
         if (shape == 'c' or shape == 'Circle'):
-            self.createCircle(collision_geometry, dim)
+            #self.createCircle(collision_geometry, dim)
             self.createCircle(visual_geometry, dim)
         elif (shape == 's' or shape == 'Square'):
-            self.createSquare(collision_geometry, dim)
+            #self.createSquare(collision_geometry, dim)
             self.createSquare(visual_geometry, dim)
 
         self.addTexture(visual, visual, material)
 
-        # max contacts
-        maxContacts = xml.SubElement(collision, "max_contacts")
-        maxContacts.text = str(10)
+        # # max contacts
+        # maxContacts = xml.SubElement(collision, "max_contacts")
+        # maxContacts.text = str(100)
 
-        # self-collide
-        self_collide = xml.SubElement(link, "self_collide")
-        self_collide.text = str(0)
+        # # self-collide
+        # self_collide = xml.SubElement(link, "self_collide")
+        # self_collide.text = str(0)
 
         # kinematics
         kinematics = xml.SubElement(link, "kinematic")
@@ -285,23 +294,23 @@ class GazeboWorld:
         link = xml.SubElement(model, "link")
         link.set('name', 'link')
 
-        # Collision
-        collision = xml.SubElement(link, "collision")
-        collision.set('name', 'collision')
+        # # Collision
+        # collision = xml.SubElement(link, "collision")
+        # collision.set('name', 'collision')
 
-        # Geometry
-        geometry = xml.SubElement(collision, "geometry")
+        # # Geometry
+        # geometry = xml.SubElement(collision, "geometry")
 
-        # sphere
-        sphere = xml.SubElement(geometry, "sphere")
+        # # sphere
+        # sphere = xml.SubElement(geometry, "sphere")
 
-        # sphere radius
-        sphere_radius = xml.SubElement(sphere, "radius")
-        sphere_radius.text = str(radius)
+        # # sphere radius
+        # sphere_radius = xml.SubElement(sphere, "radius")
+        # sphere_radius.text = str(radius)
 
-        # max contacts
-        maxContacts = xml.SubElement(collision, "max_contacts")
-        maxContacts.text = str(10)
+        # # max contacts
+        # maxContacts = xml.SubElement(collision, "max_contacts")
+        # maxContacts.text = str(10)
 
         # Visual
         visual = xml.SubElement(link, "visual")
@@ -317,9 +326,9 @@ class GazeboWorld:
         sphere_radius1 = xml.SubElement(sphere1, "radius")
         sphere_radius1.text = str(radius)
 
-        # self-collide
-        self_collide = xml.SubElement(link, "self_collide")
-        self_collide.text = str(0)
+        # # self-collide
+        # self_collide = xml.SubElement(link, "self_collide")
+        # self_collide.text = str(0)
 
         # kinematics
         kinematics = xml.SubElement(link, "kinematic")
@@ -338,12 +347,12 @@ class GazeboWorld:
         radius1 = xml.SubElement(cylinder, "radius")
         radius1.text = str(radius)  # set radius
         height = xml.SubElement(cylinder, "length")
-        height.text = str(0.0005)  # set fixed height
+        height.text = str(0.0001)  # set fixed height
 
     def createSquare(self, tag, side):
         tile = xml.SubElement(tag, "box")
         size = xml.SubElement(tile, "size")
-        size.text = str(side) + " " + str(side) + " " + str(0.005)
+        size.text = str(side) + " " + str(side) + " " + str(0.0001)
 
     def addTexture(self, surfacetag, visualtag, terrain):
         # friction = xml.SubElement(surfacetag, 'friction')

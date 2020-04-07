@@ -76,7 +76,7 @@ class TurtleBot():
         # find the error between our current theta and our desired heading
         error = goalHeading - self.theta
         # if we haven't rotated fully
-        if abs(error) > .01:
+        if abs(error) > .05:
             # Determines which way to turn
             if angle < 0:	    
                 self.publishTwist(0, -1*rotateSpeed)
