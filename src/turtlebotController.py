@@ -78,7 +78,7 @@ class TurtleBot():
         # if we haven't rotated fully
         if abs(error) > .05:
             # Determines which way to turn
-            if angle < 0:	    
+            if error < 0: # was angle	    
                 self.publishTwist(0, -1*rotateSpeed)
                 self.rotatedFully = False
             else:

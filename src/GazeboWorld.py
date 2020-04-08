@@ -192,7 +192,7 @@ class GazeboWorld:
 
         try:
             #Launch launch file which launches: Gazebo map, turtlebot controller, and waypoint service
-            process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch', "x_pos:=" + str(self.start[0]), "y_pos:=" + str(self.start[1])],
+            process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch', "x_pos:=" + str(self.start[1]), "y_pos:=" + str(self.start[0])],
                                    stdout=subprocess.PIPE,
                                    universal_newlines=True)
 
