@@ -11,7 +11,7 @@ class RR_SchedulerShared(SchedulerShared):
         neighbors = self.getNodeNeighbors(currentNode)
         newFrontierNodes = [] #needed for GUI
         
-        print("Current Node:", currentNode.row, currentNode.column)
+        #print("Current Node:", currentNode.row, currentNode.column)
         # get unexplored neighbors
         # for every neighbor find the lowest value across all heuristics
         numberExpansions = 0
@@ -56,7 +56,7 @@ class RR_SchedulerShared(SchedulerShared):
                 numberExpansions+=1
             # if neighbor is not in the unvisited list, add it to unvisited
             if (neighbor not in FrontierQueue):
-                print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, neighbor.CostToTravel)
+                #print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, neighbor.CostToTravel)
                 newFrontierNodes.append(neighbor)
                 FrontierQueue.append(neighbor)
     

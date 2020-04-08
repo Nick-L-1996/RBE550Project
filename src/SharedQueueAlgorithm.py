@@ -51,7 +51,7 @@ class SharedQueueAlgorithm:
         FrontierQueue.remove(CurrentNode)
         numExpansions = 0
         if CurrentNode == self.endNode:
-            print ("found goal")
+            #print ("found goal")
             GoalFound = True
         else:
         # updated unVisited queue with unvisited queue and cost of neighbors

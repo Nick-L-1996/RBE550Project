@@ -38,7 +38,7 @@ class EdgeCostConcrete(TerrainCosts):
             cost += 10000000000000
         
         #cost += random.randint(0,20)  # random cost to simulate the terrain not being perfect. Change values or disable if needed
-        print ("Default concrete")
+        #print ("Default concrete")
         return cost
 
 class EdgeCostWater(TerrainCosts): #slows you down and damages you if stay in for 3 grid cells

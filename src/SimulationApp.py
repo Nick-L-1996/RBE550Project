@@ -49,13 +49,13 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.SizeEntry.addItem("Small")
         self.SizeEntry.addItem("Medium")
         self.SizeEntry.addItem("Large")
-        self.SizeEntry.addItem("Very Large")
+        self.SizeEntry.addItem("Very Large")    
         self.SizeEntry.setCurrentIndex(2)
         self.SizeEntry.activated.connect(self.SizeSelectChange)
         self.Size = 40
         self.GridCellsGui = 80
         self.GridCellsSimulation = 80
-        self.GazeboTileSize = 20
+        self.GazeboTileSize = 10
 
         self.ShapeType = "None"
         self.TerrainType = "Tree"
@@ -249,8 +249,12 @@ class SimulationMap(QtWidgets.QMainWindow):
         # pass the start to the gazebo world
         self.GazeboWorld.start = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
         # this line will turn the node objects into a path that has translated them into Gazebo Units
-        newPath = self.GazeboWorld.makeGazeboUnits(self.Path)
 
+        newPath = self.GazeboWorld.makeGazeboUnits(self.Path)
+        print("FULL PATH")
+        for p in range(len(self.Path)):
+            print("Sim", self.Path[p].xcoord, self.Path[p].ycoord, "Gaz", newPath[p].xcoord, newPath[p].ycoord)
+        print ("START", self.StartNode.xcoord,self.StartNode.ycoord,"END", self.EndNode.xcoord,self.EndNode.ycoord)
         # This will pickle the final path of nodes so that the path server can access it
         with open("FinalPath.pkl", 'wb') as saveLocation:
             pickle.dump(newPath, saveLocation)
@@ -577,7 +581,9 @@ class SimulationMap(QtWidgets.QMainWindow):
                     self.MapNode[i][j].setEnvironmentType("Concrete") #default is concrete
 
         self.StartNode = self.MapNode[int(self.StartGui.row * numCells / self.GridCellsGui)][int(self.StartGui.column * numCells / self.GridCellsGui)]
+        print("START NODE POS BEFORE MODIFICATION", self.StartNode.xcoord, self.StartNode.ycoord)
         self.EndNode = self.MapNode[int(self.EndGui.row * numCells / self.GridCellsGui)][int(self.EndGui.column * numCells / self.GridCellsGui)]
+        print("END NODE POS BEFORE MODIFICATION", self.EndNode.xcoord, self.EndNode.ycoord)
         print("updated environments")
 
     def algSelectCallback(self):
@@ -845,7 +851,8 @@ class AlgorithmThread(QThread):
                 #finds path for GUI and to be sent to Turtle Bot
                 if (self.gui.EndNode.parent is not None):
                     StartReached = False
-                    CurrentNode = self.gui.EndNode.parent
+
+                    CurrentNode = self.gui.EndNode
                     while (StartReached == False):
 
                         if (CurrentNode == self.gui.StartNode):

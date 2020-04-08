@@ -8,6 +8,7 @@ To run the product of this code, navigate to this directory and run: "gazebo  [f
 """
 import xml.etree.ElementTree as xml
 import subprocess
+import copy
 
 
 class GazeboWorld:  
@@ -29,7 +30,7 @@ class GazeboWorld:
 
     #Make the path into gazebo units
     def makeGazeboUnits(self,path):
-        new_path = path.copy()
+        new_path = copy.deepcopy(path)
         for node in new_path:
             node.ycoord, node.xcoord = self.shiftSimToGazebo(node.xcoord, node.ycoord)
         return new_path
@@ -178,6 +179,7 @@ class GazeboWorld:
         # Convert X and Y into Gazebo units
         # place down the shape
             tilePose = self.shiftSimToGazebo(terrainList[i].getY(), terrainList[i].getX())
+            print("Terrain Coordinates Sim (X,Y):" , terrainList[i].getX(), terrainList[i].getY(), "Tile Pose Gazebo (Y,X): ", tilePose[0], tilePose[1])
             if(shape == 'Circle'):
                 dim = (terrainList[i].getobSize()/7.94)/2
             else:
@@ -187,6 +189,7 @@ class GazeboWorld:
             self.makeCellTile(tilePose, shape, dim, material, name)
         print("Generated File")
         self.writeFile("test_world.world", self.tree)
+
         try:
             #Launch launch file which launches: Gazebo map, turtlebot controller, and waypoint service
             process = subprocess.Popen(['roslaunch', 'RBE550Project', 'tb_eismha.launch', "x_pos:=" + str(self.start[0]), "y_pos:=" + str(self.start[1])],
@@ -197,6 +200,7 @@ class GazeboWorld:
         except Exception as e:
             print(str(e))
             print("ROS Not Installed")
+
         # try:
         #     process = subprocess.Popen(['gazebo', 'test_world.world'],
         #                            stdout=subprocess.PIPE,
