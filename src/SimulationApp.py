@@ -55,7 +55,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Size = 40
         self.GridCellsGui = 80
         self.GridCellsSimulation = 80
-        self.GazeboTileSize = 20
+        self.GazeboTileSize = 10
 
         self.ShapeType = "None"
         self.TerrainType = "Tree"
@@ -282,19 +282,6 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.BuildShape()
 
     def GenerateWorld(self):
-        # Update DrawnTerrain to match MapNode Coordinates
-        for item in self.DrawnTerrain:
-            item.clearGuiObject()
-        self.DrawnTerrainForGazebo = copy.deepcopy(self.DrawnTerrain)
-        for item in self.DrawnTerrain:
-            item.recreateGuiObject()
-        for i in range(0, len(self.DrawnTerrainForGazebo)):
-            # scales x and y based on the ratio from the MapNode cell
-            # coordinate in Gui * Size of tile Gazebo/ size of tile GUI = coordinate in Gazebo
-            self.DrawnTerrainForGazebo[i].x = int(
-                self.DrawnTerrainForGazebo[i].x * self.GazeboTileSize / self.pixelsPerCell)
-            self.DrawnTerrainForGazebo[i].y = int(
-                self.DrawnTerrainForGazebo[i].y * self.GazeboTileSize / self.pixelsPerCell)
 
         [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrainForGazebo]
         # pass the start to the gazebo world
@@ -637,6 +624,19 @@ class SimulationMap(QtWidgets.QMainWindow):
         print("START NODE POS BEFORE MODIFICATION", self.StartNode.xcoord, self.StartNode.ycoord)
         self.EndNode = self.MapNode[int(self.EndGui.row * numCells / self.GridCellsGui)][int(self.EndGui.column * numCells / self.GridCellsGui)]
         print("END NODE POS BEFORE MODIFICATION", self.EndNode.xcoord, self.EndNode.ycoord)
+        # Update DrawnTerrain to match MapNode Coordinates
+        for item in self.DrawnTerrain:
+            item.clearGuiObject()
+        self.DrawnTerrainForGazebo = copy.deepcopy(self.DrawnTerrain)
+        for item in self.DrawnTerrain:
+            item.recreateGuiObject()
+        for i in range(0, len(self.DrawnTerrainForGazebo)):
+            # scales x and y based on the ratio from the MapNode cell
+            # coordinate in Gui * Size of tile Gazebo/ size of tile GUI = coordinate in Gazebo
+            self.DrawnTerrainForGazebo[i].x = int(
+                self.DrawnTerrainForGazebo[i].x * self.GazeboTileSize / self.pixelsPerCell)
+            self.DrawnTerrainForGazebo[i].y = int(
+                self.DrawnTerrainForGazebo[i].y * self.GazeboTileSize / self.pixelsPerCell)
 
         print("updated environments")
 
