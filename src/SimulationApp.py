@@ -1,7 +1,8 @@
 import sys
 import time
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
-from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QGraphicsScene, QGraphicsEllipseItem, QGraphicsRectItem
+from PyQt5.QtWidgets import QApplication, QWidget, QDialog, QGraphicsScene, QGraphicsEllipseItem, QGraphicsRectItem, \
+    QGraphicsLineItem
 from PyQt5.QtGui import QPainter, QColor, QPen, QBrush, qRgb, QTransform
 from PyQt5.QtCore import QThread, pyqtSignal, QPoint
 from PyQt5.QtCore import Qt, QLineF, QRectF
@@ -10,7 +11,6 @@ from Node import Node
 from GazeboWorld import *
 import numpy as np  
 import pickle
-from PathServer import *
 import copy
 from SharedQueueAlgorithm import *
 from IndependentQueueAlgorithm import *
@@ -55,7 +55,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Size = 40
         self.GridCellsGui = 80
         self.GridCellsSimulation = 80
-        self.GazeboTileSize = 10
+        self.GazeboTileSize = 20
 
         self.ShapeType = "None"
         self.TerrainType = "Tree"
@@ -71,10 +71,12 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.MapNode = []
         self.MapNodeIndividual = {}
         self.DrawnTerrain = []
+        self.DrawnTerrainForGazebo = []
         self.fieldObstacleList = []
         self.SimRunning = False
         self.Path = []
         self.PathState = 0
+
 
 
         self.MapType = 1
@@ -97,6 +99,11 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.scene = QGraphicsScene() #scene for building map
         self.SharedQueueScene = QGraphicsScene() #scene for showing animation
         self.IndividualQueueScenes = {} #will have a dictionary of scenes, 1 for each queue
+
+        self.DrawnTerrainSharedScene = []
+        self.DrawnTerrainIndividualScene = {}
+        self.DrawnPath = []
+        self.GoalKey = None
 
         self.makeFieldMap()
         self.MapNames = []
@@ -127,6 +134,43 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*")
         self.isAlgorithmMultiQueue = False
         ################################################################################################
+        self.showAlgCheckBox.stateChanged.connect(self.toggleShowExpansions)
+        self.pathShown = False
+        self.ExpansionsShown = False
+
+    def toggleShowExpansions(self):
+        if self.pathShown:
+            if self.isAlgorithmMultiQueue == False:
+                if self.ExpansionsShown:
+                    self.ExpansionsShown = False
+                    for item in self.DrawnTerrainSharedScene:
+                        self.SharedQueueScene.removeItem(item)
+                else:
+                    self.ExpansionsShown = True
+                    for item in self.DrawnTerrainSharedScene:
+                        self.SharedQueueScene.addItem(item)
+
+                    #brings drawn path to front of scene
+                    for item in self.DrawnPath:
+                        self.SharedQueueScene.removeItem(item)
+                    for item in self.DrawnPath:
+                        self.SharedQueueScene.addItem(item)
+            else:
+                if self.ExpansionsShown:
+                    self.ExpansionsShown = False
+                    for key in self.DrawnTerrainIndividualScene.keys():
+                        for item in self.DrawnTerrainIndividualScene[key]:
+                            self.IndividualQueueScenes[key].removeItem(item)
+                else:
+                    self.ExpansionsShown = True
+                    for key in self.DrawnTerrainIndividualScene.keys():
+                        for item in self.DrawnTerrainIndividualScene[key]:
+                            self.IndividualQueueScenes[key].addItem(item)
+                    # brings drawn path to front of scene
+                    for item in self.DrawnPath:
+                        self.IndividualQueueScenes[self.GoalKey].removeItem(item)
+                    for item in self.DrawnPath:
+                        self.IndividualQueueScenes[self.GoalKey].addItem(item)
 
     def chooseQueue(self):
         key = self.QueueSelect.currentText()
@@ -163,14 +207,6 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def runAlg(self):
         self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation) #Populates Map
-        # for row in self.MapNode:
-        #     for col in row:
-        #         print("[", end=" ")
-        #         print(col.Environment, end=" ")
-        #         print(col.xcoord, end=" ")
-        #         print(col.ycoord, end=" ")
-        #         print("]", end=" ")
-        #     print(",")
         self.SimRunning = True
         text = self.AlgorithmSelect.currentText()
         if text == "Shared MultiHeuristic A*":
@@ -234,6 +270,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.QueueSelect.clear()
         self.NumExpLBL.setText("# Expansions: 0")
         self.GridView.setScene(self.scene)
+        self.pathShown = False
     def circleSel(self):
         self.ShapeType = "Circle"
         self.CursorState = 5
@@ -245,7 +282,21 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.BuildShape()
 
     def GenerateWorld(self):
-        [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrain]
+        # Update DrawnTerrain to match MapNode Coordinates
+        for item in self.DrawnTerrain:
+            item.clearGuiObject()
+        self.DrawnTerrainForGazebo = copy.deepcopy(self.DrawnTerrain)
+        for item in self.DrawnTerrain:
+            item.recreateGuiObject()
+        for i in range(0, len(self.DrawnTerrainForGazebo)):
+            # scales x and y based on the ratio from the MapNode cell
+            # coordinate in Gui * Size of tile Gazebo/ size of tile GUI = coordinate in Gazebo
+            self.DrawnTerrainForGazebo[i].x = int(
+                self.DrawnTerrainForGazebo[i].x * self.GazeboTileSize / self.pixelsPerCell)
+            self.DrawnTerrainForGazebo[i].y = int(
+                self.DrawnTerrainForGazebo[i].y * self.GazeboTileSize / self.pixelsPerCell)
+
+        [print(terrain.getX(), terrain.getY()) for terrain in self.DrawnTerrainForGazebo]
         # pass the start to the gazebo world
         self.GazeboWorld.start = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
         # this line will turn the node objects into a path that has translated them into Gazebo Units
@@ -258,7 +309,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         # This will pickle the final path of nodes so that the path server can access it
         with open("FinalPath.pkl", 'wb') as saveLocation:
             pickle.dump(newPath, saveLocation)
-        self.GazeboWorld.makeWorldFromList(self.DrawnTerrain)
+        self.GazeboWorld.makeWorldFromList(self.DrawnTerrainForGazebo)
 
         #startGazeboCoords = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
         # enter starting x y theta
@@ -561,12 +612,14 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def generateNodeMap(self, size, numCells):# make num cells between 80 and 160 for simplicity and prevent loss of map details, do not exceed grid cell size 160
         self.MapNode = []
+        #generates Grid of Nodes
         for i in range(0, numCells):
             row = []
             for j in range(0, numCells):
                 row.append(Node(j*size+size/2, i*size+size/2, i, j))
             self.MapNode.append(row)
         cellSizePixel = int(self.Graphicsheight / numCells)
+        #goes through each cell and checks if there is an object and updates the node array
         for i in range(0, numCells):
             for j in range(0, numCells):
                 x = j * cellSizePixel + cellSizePixel/2
@@ -584,6 +637,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         print("START NODE POS BEFORE MODIFICATION", self.StartNode.xcoord, self.StartNode.ycoord)
         self.EndNode = self.MapNode[int(self.EndGui.row * numCells / self.GridCellsGui)][int(self.EndGui.column * numCells / self.GridCellsGui)]
         print("END NODE POS BEFORE MODIFICATION", self.EndNode.xcoord, self.EndNode.ycoord)
+
         print("updated environments")
 
     def algSelectCallback(self):
@@ -612,41 +666,46 @@ class SimulationMap(QtWidgets.QMainWindow):
         if self.isAlgorithmMultiQueue == False:
             self.NumExpLBL.setText("# Expansions: " + str(result[4]))
             if (result[0] == True):
+                self.showAlgCheckBox.setChecked(True)
                 self.Path = result[3]
-                for item in result[3]:
-                    SelectedNode = item
-                    x = SelectedNode.column * self.pixelsPerCellNode
-                    y = SelectedNode.row * self.pixelsPerCellNode
-                    shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
-                    shape.setTransformOriginPoint(QPoint(x, y))
-                    shape.setPen(QPen(self.purple))
-                    shape.setBrush(QBrush(self.purple, Qt.SolidPattern))
-                    shape.setOpacity(0.5)
+                for index in range(0, len(result[3])-1):
+                    SelectedNode1 = result[3][index]
+                    x1 = int(SelectedNode1.column * self.pixelsPerCellNode)
+                    y1 = int(SelectedNode1.row * self.pixelsPerCellNode)
+                    SelectedNode2 = result[3][index+1]
+                    x2 = int(SelectedNode2.column * self.pixelsPerCellNode)
+                    y2 = int(SelectedNode2.row * self.pixelsPerCellNode)
+                    shape = QGraphicsLineItem(x1, y1, x2, y2)
+                    shape.setTransformOriginPoint(QPoint(x1, y1))
+                    shape.setPen(QPen(self.purple, 4))
+                    self.DrawnPath.append(shape)
                     self.SharedQueueScene.addItem(shape)
+                self.ExpansionsShown = True
+                self.pathShown = True
                 self.SimRunning = False
             else:
-                for item in result[1]:
-                    SelectedNode = item
-                    if (SelectedNode != self.EndNode and SelectedNode != self.StartNode):
-                        x = SelectedNode.column * self.pixelsPerCellNode
-                        y = SelectedNode.row * self.pixelsPerCellNode
-                        shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
-                        shape.setTransformOriginPoint(QPoint(x, y))
-                        shape.setPen(QPen(self.green))
-                        shape.setBrush(QBrush(self.green, Qt.SolidPattern))
-                        shape.setOpacity(0.5)
-                        self.SharedQueueScene.addItem(shape)
-                for item in result[2]:
-                    SelectedNode = item
-                    if (SelectedNode != self.EndNode and SelectedNode != self.StartNode):
-                        x = SelectedNode.column*self.pixelsPerCellNode
-                        y = SelectedNode.row*self.pixelsPerCellNode
-                        shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
-                        shape.setTransformOriginPoint(QPoint(x, y))
-                        shape.setPen(QPen(self.yellow))
-                        shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
-                        shape.setOpacity(0.5)
-                        self.SharedQueueScene.addItem(shape)
+                for index in result[1]:
+                    SelectedNode1 = index
+                    x = int(SelectedNode1.column * self.pixelsPerCellNode)
+                    y = int(SelectedNode1.row * self.pixelsPerCellNode)
+                    shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                    shape.setTransformOriginPoint(QPoint(x, y))
+                    shape.setPen(QPen(self.green))
+                    shape.setBrush(QBrush(self.green, Qt.SolidPattern))
+                    #shape.setOpacity(0.5)
+                    self.DrawnTerrainSharedScene.append(shape)
+                    self.SharedQueueScene.addItem(shape)
+                for index in result[2]:
+                    SelectedNode1 = index
+                    x = int(SelectedNode1.column*self.pixelsPerCellNode)
+                    y = int(SelectedNode1.row*self.pixelsPerCellNode)
+                    shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                    shape.setTransformOriginPoint(QPoint(x, y))
+                    shape.setPen(QPen(self.yellow))
+                    shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
+                    #shape.setOpacity(0.5)
+                    self.DrawnTerrainSharedScene.append(shape)
+                    self.SharedQueueScene.addItem(shape)
 
         #################################################################################################
         # Independent Queue
@@ -654,21 +713,27 @@ class SimulationMap(QtWidgets.QMainWindow):
         elif self.isAlgorithmMultiQueue == True:
             self.NumExpLBL.setText("# Expansions: " + str(result[4]))
             if (result[0] == True):
+                self.showAlgCheckBox.setChecked(True)
                 PathKey = result[3][0]
+                self.GoalKey = PathKey
                 self.Path = result[3][1]
                 index = self.QueueSelect.findText(PathKey, QtCore.Qt.MatchFixedString)
                 self.chooseQueue()
                 self.QueueSelect.setCurrentIndex(index)
-                for item in result[3][1]:
-                    SelectedNode = item
-                    x = SelectedNode.column * self.pixelsPerCellNode
-                    y = SelectedNode.row * self.pixelsPerCellNode
-                    shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
-                    shape.setTransformOriginPoint(QPoint(x, y))
-                    shape.setPen(QPen(self.purple))
-                    shape.setBrush(QBrush(self.purple, Qt.SolidPattern))
-                    shape.setOpacity(0.5)
+                for index in range(0, len(result[3][1]) - 1):
+                    SelectedNode1 = result[3][1][index]
+                    x1 = int(SelectedNode1.column * self.pixelsPerCellNode)
+                    y1 = int(SelectedNode1.row * self.pixelsPerCellNode)
+                    SelectedNode2 = result[3][1][index + 1]
+                    x2 = int(SelectedNode2.column * self.pixelsPerCellNode)
+                    y2 = int(SelectedNode2.row * self.pixelsPerCellNode)
+                    shape = QGraphicsLineItem(x1, y1, x2, y2)
+                    shape.setTransformOriginPoint(QPoint(x1, y1))
+                    shape.setPen(QPen(self.purple, 4))
+                    self.DrawnPath.append(shape)
                     self.IndividualQueueScenes[PathKey].addItem(shape)
+                self.ExpansionsShown = True
+                self.pathShown = True
                 self.SimRunning = False
             else:
                 for key in result[1].keys():
@@ -676,29 +741,29 @@ class SimulationMap(QtWidgets.QMainWindow):
                         index = self.QueueSelect.findText(key, QtCore.Qt.MatchFixedString)
                         self.QueueSelect.setCurrentIndex(index)
                         self.chooseQueue()
-                    for item in result[1][key]:
-                        SelectedNode = item
-                        if (SelectedNode != self.EndNodeIndividual[key] and SelectedNode != self.StartNodeIndividual[key]):
-                            x = SelectedNode.column * self.pixelsPerCellNode
-                            y = SelectedNode.row * self.pixelsPerCellNode
-                            shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
-                            shape.setTransformOriginPoint(QPoint(x, y))
-                            shape.setPen(QPen(self.green))
-                            shape.setBrush(QBrush(self.green, Qt.SolidPattern))
-                            shape.setOpacity(0.5)
-                            self.IndividualQueueScenes[key].addItem(shape)
+                    for index in result[1][key]:
+                        SelectedNode1 = index
+                        x = int(SelectedNode1.column * self.pixelsPerCellNode)
+                        y = int(SelectedNode1.row * self.pixelsPerCellNode)
+                        shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                        shape.setTransformOriginPoint(QPoint(x, y))
+                        shape.setPen(QPen(self.green))
+                        shape.setBrush(QBrush(self.green, Qt.SolidPattern))
+                        #shape.setOpacity(0.5)
+                        self.DrawnTerrainIndividualScene[key].append(shape)
+                        self.IndividualQueueScenes[key].addItem(shape)
                 for key in result[1].keys():
-                    for item in result[2][key]:
-                        SelectedNode = item
-                        if (SelectedNode != self.EndNodeIndividual[key] and SelectedNode != self.StartNodeIndividual[key]):
-                            x = SelectedNode.column * self.pixelsPerCellNode
-                            y = SelectedNode.row * self.pixelsPerCellNode
-                            shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
-                            shape.setTransformOriginPoint(QPoint(x, y))
-                            shape.setPen(QPen(self.yellow))
-                            shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
-                            shape.setOpacity(0.5)
-                            self.IndividualQueueScenes[key].addItem(shape)
+                    for index in result[2][key]:
+                        SelectedNode1 = index
+                        x = int(SelectedNode1.column * self.pixelsPerCellNode)
+                        y = int(SelectedNode1.row * self.pixelsPerCellNode)
+                        shape = QGraphicsRectItem(x, y, self.pixelsPerCellNode, self.pixelsPerCellNode)
+                        shape.setTransformOriginPoint(QPoint(x, y))
+                        shape.setPen(QPen(self.yellow))
+                        shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
+                        #shape.setOpacity(0.5)
+                        self.DrawnTerrainIndividualScene[key].append(shape)
+                        self.IndividualQueueScenes[key].addItem(shape)
 
     def constructSharedQueueAnimationScene(self):
         print("Constructing new scene")
@@ -750,6 +815,9 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.EndShapeShared.setPen(QPen(self.black))
             self.EndShapeShared.setBrush(QBrush(self.red, Qt.SolidPattern))
             self.SharedQueueScene.addItem(self.EndShapeShared)
+            self.DrawnTerrainSharedScene = []
+            self.DrawnPath = []
+
 
 
     def constructIndependentQueueAnimationScene(self):
@@ -757,9 +825,10 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.MapNodeIndividual = {}
         self.StartNodeIndividual = {}
         self.EndNodeIndividual = {}
+        self.DrawnTerrainIndividualScene = {}
         self.QueueSelect.clear()
         for key in self.CurrentAlgorithm.Queues.keys():
-
+            self.DrawnTerrainIndividualScene[key] = []
             print("Constructing new scene")
             self.IndividualQueueScenes[key] = QGraphicsScene()
             # draw box
@@ -815,6 +884,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.EndNodeIndividual[key] = self.MapNodeIndividual[key][row][col] #makes sure references line up
             self.QueueSelect.addItem(key)
         self.chooseQueue()
+        self.DrawnPath = []
 
 class AlgorithmThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
@@ -860,7 +930,7 @@ class AlgorithmThread(QThread):
                         else:
                             Path.append(CurrentNode)
                             CurrentNode = CurrentNode.parent
-
+                    Path.append(self.gui.StartNode)
                     Path.reverse()
                     self.gui.Path = Path
                     self.signal.emit([True, [], [], Path, numExp])
@@ -926,7 +996,7 @@ class AlgorithmThread(QThread):
                 """
                 if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
                     StartReached = False
-                    CurrentNode = self.gui.EndNodeIndividual[GoalKey].parent
+                    CurrentNode = self.gui.EndNodeIndividual[GoalKey]
                     while (StartReached == False):
 
                         if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
@@ -934,7 +1004,7 @@ class AlgorithmThread(QThread):
                         else:
                             Path.append(CurrentNode)
                             CurrentNode = CurrentNode.parent
-
+                    Path.append(self.gui.StartNodeIndividual[GoalKey])
                     Path.reverse()
                     self.gui.Path = Path
                     self.signal.emit([True, {}, {}, [GoalKey, Path], numExp])
