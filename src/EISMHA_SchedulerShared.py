@@ -1,14 +1,28 @@
-#@TODO: How are we doing the sxploitation? Randomly or like DTS?
+#@TODO: How are we doing the exploitation? Randomly or like DTS?
 #       We'll just say random for now. 
 from SchedulersShared import *
 import random
+import sys
 class EISMHA_SchedulerShared(SchedulerShared):
-    def __init__(self, map):
+    def __init__(self, map, epsilon):
         super().__init__(map)
-        pass
+        self.lastHeuristicValue = sys.maxsize
+        self.epsilon = epsilon
+        heuristics = [HeuristicWater(),
+            HeuristicMud(),
+            HeuristicConcrete(),
+            HeuristicTrees(),
+            HeuristicSand()]
+        self.TerrainPerformance = {
+            "Water" : EISMHATerrainPerformance (heuristics,   [50, 1, 1, 1, 1], [1, 1, 1, 1, 1], 100),
+            "Concrete" : EISMHATerrainPerformance(heuristics, [1, 50, 1, 1, 1], [1, 1, 1, 1, 1], 100),
+            "Sand" : EISMHATerrainPerformance (heuristics,    [1, 1, 1, 1, 50], [1, 1, 1, 1, 1], 100),
+            "Trees" : EISMHATerrainPerformance (heuristics,   [1, 1, 1, 50, 1], [1, 1, 1, 1, 1], 100),
+            "Mud" : EISMHATerrainPerformance (heuristics,     [1, 50, 1, 1, 1], [1, 1, 1, 1, 1], 100)
+        }
 
     #OVERLOADED FUNCTION
-    def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy, epsilon):
+    def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):
         
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
@@ -37,23 +51,25 @@ class EISMHA_SchedulerShared(SchedulerShared):
 
             # FOR NOW SET THIS HERE SO THIS RUNS
             exploiting = None
-            
-            """
-            For each of the neighbor, apply the heuristic that pertains to its terrain. 
-            A random percent of the time, it will choose another random heursitic and compare it to the one its associated with
-            If the one that is lower is actually cheaper, then it gets rewarded 
-            """
-            #Apply the heuristic type and get the cost
-            #@TODO: EXPLOTING OR EXPLORING?
-            if(exploiting):
-                heuristicCost = self.getHeuristicValue(neighbor.Environment, currentNode, neighbor, endNode)
-            else:
-                # random other heuristic
-                randHeur = random.choice(list(self.heuristicGetters.keys()))
-                heuristicCost = self.getHeuristicValue(randHeur, currentNode, neighbor, endNode)
 
-    
-            chosenHeuristic = None
+            # Random number generator to determine if exploiting
+            rand = random.random()
+            if (rand > self.epsilon):
+                exploiting = True
+            else:
+                exploiting = False
+           
+            # Heuristic Object Type
+            chosenHeuristic = self.TerrainPerformance[terrain_type].getHeuristic(exploiting)
+            heuristicCost = chosenHeuristic.getHeuristic(currentNode, neighbor, endNode)
+
+            if(heuristicCost < self.lastHeuristicValue):
+                #reward that heuristic
+                self.TerrainPerformance[terrain_type].UpdateMetaMethod(True)
+            else:
+                #punish that heuristic
+                self.TerrainPerformance[terrain_type].UpdateMetaMethod(False)
+
             # check a neighbor with all heuristics
             # for each key in the heuristic getters.
             if isGreedy:
@@ -76,3 +92,66 @@ class EISMHA_SchedulerShared(SchedulerShared):
 
         # return Frontier Queue, newFrontierNodes, number of expansions
         return FrontierQueue, newFrontierNodes, numberExpansions
+
+class EISMHAHeuristicObject:
+    def __init__(self, Heuristic, alpha, beta, C):
+        self.C = C
+        self.alpha = alpha
+        self.beta = beta
+        self.Heuristic = Heuristic
+
+    def rewardHeuristic(self):
+        self.alpha+=1
+        self.limitMem()
+
+    def punishHeuristic(self):
+        self.beta+=1
+        self.limitMem()
+
+    def limitMem(self):
+        if (self.alpha + self.beta) > self.C:
+            self.alpha *= self.C / (1 + self.C)
+            self.beta *= self.C / (1 + self.C)
+
+    def betaDistribution2(self, xnew): # returns the highest probability density at a given point
+        return np.power(xnew, self.alpha-1)*np.power((1-xnew), self.beta-1)#beta distribution function
+
+class EISMHATerrainPerformance:
+    def __init__(self, Heuristics, ListOfStartingAlphas, ListOfStartingBetas, C):
+        #heuristicList is list of heuristic objects
+        #self.heuristicList is list of EISHMAHeuristicObjects
+        self.EISMHAHeuristicObjectList = []
+        #self.Heuristics = Heuristics
+        self.lastReturnedHeuristicIndex = 0
+        for index in range(0, len(Heuristics)):
+            self.EISMHAHeuristicObjectList.append(EISMHAHeuristicObject(Heuristics[index], ListOfStartingAlphas[index], ListOfStartingBetas[index], C))
+    
+    def getHeuristic(self, Exploiting):
+        # update lastReturnedHeuristicIndex
+        # Iterate through heuristics, call betaDistribution2(75%) on each object in the list
+        # find the best one one, and the second best one. Store it. 
+
+        #Type, betaDistribution
+        heuristicBetaDistribution = []
+        for i in range(len(self.EISMHAHeuristicObjectList)):
+            heuristicBetaDistribution.append((self.EISMHAHeuristicObjectList[i].Heuristic, self.EISMHAHeuristicObjectList[i].betaDistribution2(.75), i))
+        
+        heuristicBetaDistribution.sort(key=lambda x: x[1])
+        # bestIndex = heuristicBetaDistribution.index(max(heuristicBetaDistribution))
+        # Bear with me here
+        # secondBestIndex = heuristicBetaDistribution.index(max(value for value in heuristicBetaDistribution if value!=max(heuristicBetaDistribution)))
+        if(Exploiting):
+            # return the best Heuristic, update lastReturnedHeuristicIndex
+            self.lastReturnedHeuristicIndex = heuristicBetaDistribution[0][2]
+            return heuristicBetaDistribution[0][0]
+        else:
+            # return second best Heuristic
+            self.lastReturnedHeuristicIndex = heuristicBetaDistribution[1][2]
+            return heuristicBetaDistribution[1][0]
+
+    def UpdateMetaMethod(self, didBetter):
+        # If better reward, else punish
+        if didBetter:
+            self.EISMHAHeuristicObjectList[self.lastReturnedHeuristicIndex].rewardHeuristic()
+        else:
+            self.EISMHAHeuristicObjectList[self.lastReturnedHeuristicIndex].punishHeuristic()

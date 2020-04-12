@@ -77,6 +77,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Path = []
         self.PathState = 0
 
+        self.epsilon = 30
+
 
 
         self.MapType = 1
@@ -125,6 +127,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.AlgorithmSelect.addItem("Shared MultiHeuristic Greedy Best First Search")
         self.AlgorithmSelect.addItem("Individual Greedy DTS")
         self.AlgorithmSelect.addItem("Individual A* DTS")
+        self.AlgorithmSelect.addItem("EISMHA")
         self.AlgorithmSelect.activated.connect(self.algSelectCallback)
 
         self.AlgThread = AlgorithmThread(self)
@@ -221,6 +224,9 @@ class SimulationMap(QtWidgets.QMainWindow):
         elif text == "Individual A* DTS":
             self.constructIndependentQueueAnimationScene()
             self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
+        elif text == "EISMHA":
+            self.constructSharedQueueAnimationScene()
+            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, self.epsilon) #update algorithm with new values
         self.StatusLabel.setText("Status: Running")
 
         self.AlgThread.start()
@@ -654,6 +660,9 @@ class SimulationMap(QtWidgets.QMainWindow):
         elif text == "Individual A* DTS":
             self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual,self.EndNodeIndividual, algorithm="DTSA*")
             self.isAlgorithmMultiQueue = True
+        elif text == "EISMHA":
+            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, self.epsilon, algorithm="EISMHA")
+            self.isAlgorithmMultiQueue = False
 
 
     # Callback for Alg Thread
@@ -894,127 +903,123 @@ class AlgorithmThread(QThread):
         self.gui = gui
 
     def run(self):
-        try:
-            Done = False # Becomes True when goal is found
-            #################################################################################################
-            # Shared Queue
-            ################################################################################################
-            if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
-                self.gui.StartNode.CostToTravel = 0
-                FrontierQueue = [self.gui.StartNode]
-                ExploredQueue = []
-                Path = []
-                numExp = 0
-                while (Done == False):
-                    time.sleep(self.gui.SimSpeed)
-                    GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
-                    if (GoalFound):
-                        Done = True
-                        print("Found Goal")
-                    elif (QueueEmpty):
-                        Done = True
-                        print("Queue Empty")
-                    numExp += newnumExp
-                    self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, numExp])
-                    ExploredQueue.append(NewExploredNode)
+        Done = False # Becomes True when goal is found
+        #################################################################################################
+        # Shared Queue
+        ################################################################################################
+        if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
+            self.gui.StartNode.CostToTravel = 0
+            FrontierQueue = [self.gui.StartNode]
+            ExploredQueue = []
+            Path = []
+            numExp = 0
+            while (Done == False):
+                time.sleep(self.gui.SimSpeed)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
+                if (GoalFound):
+                    Done = True
+                    print("Found Goal")
+                elif (QueueEmpty):
+                    Done = True
+                    print("Queue Empty")
+                numExp += newnumExp
+                self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, numExp])
+                ExploredQueue.append(NewExploredNode)
 
-                #finds path for GUI and to be sent to Turtle Bot
-                if (self.gui.EndNode.parent is not None):
-                    StartReached = False
+            #finds path for GUI and to be sent to Turtle Bot
+            if (self.gui.EndNode.parent is not None):
+                StartReached = False
 
-                    CurrentNode = self.gui.EndNode
-                    while (StartReached == False):
+                CurrentNode = self.gui.EndNode
+                while (StartReached == False):
 
-                        if (CurrentNode == self.gui.StartNode):
-                            StartReached = True
-                        else:
-                            Path.append(CurrentNode)
-                            CurrentNode = CurrentNode.parent
-                    Path.append(self.gui.StartNode)
-                    Path.reverse()
-                    self.gui.Path = Path
-                    self.signal.emit([True, [], [], Path, numExp])
-                else:
-                    self.signal.emit([True, [], [], [], numExp])
-                print("Done")
-            #################################################################################################
-            #Multi Queue
-            ################################################################################################
-            elif self.gui.isAlgorithmMultiQueue == True:
-                FrontierQueue = {}
-                ExploredQueue = {}
-                Path = []  # Only one path
-                numExp = 0
+                    if (CurrentNode == self.gui.StartNode):
+                        StartReached = True
+                    else:
+                        Path.append(CurrentNode)
+                        CurrentNode = CurrentNode.parent
+                Path.append(self.gui.StartNode)
+                Path.reverse()
+                self.gui.Path = Path
+                self.signal.emit([True, [], [], Path, numExp])
+            else:
+                self.signal.emit([True, [], [], [], numExp])
+            print("Done")
+        #################################################################################################
+        #Multi Queue
+        ################################################################################################
+        elif self.gui.isAlgorithmMultiQueue == True:
+            FrontierQueue = {}
+            ExploredQueue = {}
+            Path = []  # Only one path
+            numExp = 0
+            for key in self.gui.CurrentAlgorithm.Queues.keys():
+                self.gui.StartNodeIndividual[key].CostToTravel = 0
+                FrontierQueue[key] = [self.gui.StartNodeIndividual[key]]
+                ExploredQueue[key] = []
+
+            GoalKey = None
+            while (Done == False):
+                time.sleep(self.gui.SimSpeed)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(
+                    ExploredQueue, FrontierQueue)
+                isGoalFound = False
+                isQueueEmpty = True
                 for key in self.gui.CurrentAlgorithm.Queues.keys():
-                    self.gui.StartNodeIndividual[key].CostToTravel = 0
-                    FrontierQueue[key] = [self.gui.StartNodeIndividual[key]]
-                    ExploredQueue[key] = []
+                    if GoalFound[key]:
+                        GoalKey = key
+                    isGoalFound = isGoalFound | GoalFound[key] # ors all booleans for Done in each queue. If one is True algorithm is done
+                    isQueueEmpty = isQueueEmpty & QueueEmpty[key] # if all queues are empty algorithm is done
+                    for item in NewExploredNode[key]:
+                        ExploredQueue[key].append(item)
 
-                GoalKey = None
-                while (Done == False):
-                    time.sleep(self.gui.SimSpeed)
-                    GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(
-                        ExploredQueue, FrontierQueue)
-                    isGoalFound = False
-                    isQueueEmpty = True
-                    for key in self.gui.CurrentAlgorithm.Queues.keys():
-                        if GoalFound[key]:
-                            GoalKey = key
-                        isGoalFound = isGoalFound | GoalFound[key] # ors all booleans for Done in each queue. If one is True algorithm is done
-                        isQueueEmpty = isQueueEmpty & QueueEmpty[key] # if all queues are empty algorithm is done
-                        for item in NewExploredNode[key]:
-                            ExploredQueue[key].append(item)
+                if (isGoalFound):
+                    Done = True
+                    print("Found Goal")
+                #Need to check if all Queues are empty
+                elif (isQueueEmpty):
+                    Done = True
+                    print("Queue Empty")
+                numExp += newnumExp
+                self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, numExp])
 
-                    if (isGoalFound):
-                        Done = True
-                        print("Found Goal")
-                    #Need to check if all Queues are empty
-                    elif (isQueueEmpty):
-                        Done = True
-                        print("Queue Empty")
-                    numExp += newnumExp
-                    self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, numExp])
+            # finds path for GUI and to be sent to Turtle Bot
+            """
+            1) Initially, we make take the start node and shift it to gazebo units the same way we place obstacles in Gazebo
 
-                # finds path for GUI and to be sent to Turtle Bot
-                """
-                1) Initially, we make take the start node and shift it to gazebo units the same way we place obstacles in Gazebo
+            2) Now, for each node in the path, we're going to want to shift the x and y coordinates into Gazebo units (or RVIZ)
+            3) So, now we have the XY Coordinates of the nodes in the path in Gazebo units
+            4) We want to send this information to some tool (NavStack, or something else), that will move the robot along the path
 
-                2) Now, for each node in the path, we're going to want to shift the x and y coordinates into Gazebo units (or RVIZ)
-                3) So, now we have the XY Coordinates of the nodes in the path in Gazebo units
-                4) We want to send this information to some tool (NavStack, or something else), that will move the robot along the path
+            4/1 to 4/9:
+            If we can use the NavStack (probably)
+                -- Let's just try to get the robot moving from origin to clicked point in RVIZ
+                -- try to shift XY from sim world to RVIZ XY
+                -- sequentially send points to go to from Python
+                -- integrate into 550 Project
 
-                4/1 to 4/9:
-                If we can use the NavStack (probably)
-                    -- Let's just try to get the robot moving from origin to clicked point in RVIZ
-                    -- try to shift XY from sim world to RVIZ XY
-                    -- sequentially send points to go to from Python
-                    -- integrate into 550 Project
+            Use pickle to write 'Path' object, so ROS can unpack it. 
 
-                Use pickle to write 'Path' object, so ROS can unpack it. 
+            Else: Do it ourselvese (probably won't have to)
+            """
+            if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
+                StartReached = False
+                CurrentNode = self.gui.EndNodeIndividual[GoalKey]
+                while (StartReached == False):
 
-                Else: Do it ourselvese (probably won't have to)
-                """
-                if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
-                    StartReached = False
-                    CurrentNode = self.gui.EndNodeIndividual[GoalKey]
-                    while (StartReached == False):
+                    if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
+                        StartReached = True
+                    else:
+                        Path.append(CurrentNode)
+                        CurrentNode = CurrentNode.parent
+                Path.append(self.gui.StartNodeIndividual[GoalKey])
+                Path.reverse()
+                self.gui.Path = Path
+                self.signal.emit([True, {}, {}, [GoalKey, Path], numExp])
+            else:
+                self.signal.emit([True, {}, {}, [], numExp])
+            print("Done")
 
-                        if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
-                            StartReached = True
-                        else:
-                            Path.append(CurrentNode)
-                            CurrentNode = CurrentNode.parent
-                    Path.append(self.gui.StartNodeIndividual[GoalKey])
-                    Path.reverse()
-                    self.gui.Path = Path
-                    self.signal.emit([True, {}, {}, [GoalKey, Path], numExp])
-                else:
-                    self.signal.emit([True, {}, {}, [], numExp])
-                print("Done")
-
-        except Exception as e:
-            print("Please Click 'Run Gazebo', then hit Run. The world is empty right now")
-            print(str(e))
 
 
 if __name__ == '__main__':

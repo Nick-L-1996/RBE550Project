@@ -1,5 +1,6 @@
 from SchedulersShared import *
 from RR_SchedulerShared import *
+from EISMHA_SchedulerShared import *
 import time
 
 class SharedQueueAlgorithm:
@@ -31,7 +32,7 @@ class SharedQueueAlgorithm:
         elif algorithm =="MHGBFS":
             return RR_SchedulerShared(self.map), True #this is Shared Multiheuristic Greedy Best First Search
         elif algorithm == "EISMHA":
-            return EISMHA_Scheduler(self.map), False
+            return EISMHA_SchedulerShared(self.map, self.otherArgs), False
 
     # This function is needed for compatibility with GUI
     #takes in the frontier and explored queues
