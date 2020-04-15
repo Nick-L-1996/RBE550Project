@@ -7,6 +7,8 @@ class EISMHA_SchedulerShared(SchedulerShared):
         self.lastHeuristicValue = sys.maxsize
         # Epsilon value (thershold) for probability of exploitation  
         self.epsilon = epsilon
+        startingAlpha = 150
+
         
         #List of heuristics available for EISMHA Terrain Performance Metric
         heuristics = [HeuristicWater(),
@@ -18,11 +20,11 @@ class EISMHA_SchedulerShared(SchedulerShared):
         # This dictionary holds objects of type TerrainPerformance. The keys are the terrain type, and the 
         # keys are objects that hold the ability to update the performance of the heuristics for each terrain
         self.TerrainPerformance = {
-            "Water" : TerrainPerformanceTracker (heuristics,   [50, 1, 1, 1, 1], [1, 1, 1, 1, 1], 100),
-            "Concrete" : TerrainPerformanceTracker(heuristics, [1, 50, 1, 1, 1], [1, 1, 1, 1, 1], 100),
-            "Sand" : TerrainPerformanceTracker (heuristics,    [1, 1, 1, 1, 50], [1, 1, 1, 1, 1], 100),
-            "Trees" : TerrainPerformanceTracker (heuristics,   [1, 1, 1, 50, 1], [1, 1, 1, 1, 1], 100),
-            "Mud" : TerrainPerformanceTracker (heuristics,     [1, 50, 1, 1, 1], [1, 1, 1, 1, 1], 100)
+            "Water" : TerrainPerformanceTracker (heuristics,   [startingAlpha, 1, 1, 1, 1], [1, 1, 1, 1, 1], 100),
+            "Concrete" : TerrainPerformanceTracker(heuristics, [1, startingAlpha, 1, 1, 1], [1, 1, 1, 1, 1], 100),
+            "Sand" : TerrainPerformanceTracker (heuristics,    [1, 1, 1, 1, startingAlpha], [1, 1, 1, 1, 1], 100),
+            "Trees" : TerrainPerformanceTracker (heuristics,   [1, 1, 1, startingAlpha, 1], [1, 1, 1, 1, 1], 100),
+            "Mud" : TerrainPerformanceTracker (heuristics,     [1, startingAlpha, 1, 1, 1], [1, 1, 1, 1, 1], 100)
         }
 
     #OVERLOADED FUNCTION
@@ -53,7 +55,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
             #print("Edge Cost:", edgeCost)
 
             # Random number generator to determine if exploiting
-            rand = random.random()
+            rand = random.random() * 100
             if (rand > self.epsilon):
                 exploiting = True
             else:
