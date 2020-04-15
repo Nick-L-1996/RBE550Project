@@ -79,7 +79,7 @@ class SimulationMap(QtWidgets.QMainWindow):
 
         self.epsilon = 30
 
-
+        self.terrainShifted = False
 
         self.MapType = 1
         self.scene = QGraphicsScene()
@@ -275,12 +275,17 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.StatusLabel.setText("Status: Ready")
         self.QueueSelect.clear()
         self.NumExpLBL.setText("# Expansions: 0")
+        # print (len(self.DrawnTerrain))
+        # for n in self.DrawnTerrain:
+        #     print
         self.GridView.setScene(self.scene)
         self.pathShown = False
+
     def circleSel(self):
         self.ShapeType = "Circle"
         self.CursorState = 5
         self.BuildShape()
+
     def SquareSel(self):
         self.ShapeType = "Square"
         self.CursorState = 5
@@ -596,6 +601,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.scene.removeItem(item.getGuiObject())
         self.DrawnTerrain = []
         self.clearFieldMap()
+        self.terrainShifted = False
 
     def clearFieldMap(self):
         for item in self.fieldObstacleList:
@@ -605,6 +611,7 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def generateNodeMap(self, size, numCells):# make num cells between 80 and 160 for simplicity and prevent loss of map details, do not exceed grid cell size 160
         self.MapNode = []
+        # print("gazebo terrain len",len(self.DrawnTerrainForGazebo))
         #generates Grid of Nodes
         for i in range(0, numCells):
             row = []
@@ -618,9 +625,11 @@ class SimulationMap(QtWidgets.QMainWindow):
                 x = j * cellSizePixel + cellSizePixel/2
                 y = i * cellSizePixel + cellSizePixel/2
                 Shape = self.scene.itemAt(x, y, QTransform())
-                if (Shape != None ):
+                if (Shape != None):
+                    print(Shape)
                     for item in self.DrawnTerrain:
                         if item.getGuiObject() == Shape:
+                            print("Have Terrain")
                             self.MapNode[i][j].setEnvironmentType(item.TerrainType)
                             break
                 else:
@@ -630,12 +639,17 @@ class SimulationMap(QtWidgets.QMainWindow):
         print("START NODE POS BEFORE MODIFICATION", self.StartNode.xcoord, self.StartNode.ycoord)
         self.EndNode = self.MapNode[int(self.EndGui.row * numCells / self.GridCellsGui)][int(self.EndGui.column * numCells / self.GridCellsGui)]
         print("END NODE POS BEFORE MODIFICATION", self.EndNode.xcoord, self.EndNode.ycoord)
-        # Update DrawnTerrain to match MapNode Coordinates
-        for item in self.DrawnTerrain:
-            item.clearGuiObject()
+        # Update DrawnTerrain to match MapNode Coordinates 
+        ## NOTE: I have removed the deletion and recreation of the GUI object because it gets created as a different object, and fails 
+        # The conditions made between lines 628 and 631. Now, when you hit clear and run again, it works as it should. 
+
+        # for item in self.DrawnTerrain:
+        #     item.clearGuiObject()
         self.DrawnTerrainForGazebo = copy.deepcopy(self.DrawnTerrain)
-        for item in self.DrawnTerrain:
-            item.recreateGuiObject()
+        # for item in self.DrawnTerrain:
+        #     item.recreateGuiObject()
+
+        
         for i in range(0, len(self.DrawnTerrainForGazebo)):
             # scales x and y based on the ratio from the MapNode cell
             # coordinate in Gui * Size of tile Gazebo/ size of tile GUI = coordinate in Gazebo
@@ -643,8 +657,8 @@ class SimulationMap(QtWidgets.QMainWindow):
                 self.DrawnTerrainForGazebo[i].x * self.GazeboTileSize / self.pixelsPerCell)
             self.DrawnTerrainForGazebo[i].y = int(
                 self.DrawnTerrainForGazebo[i].y * self.GazeboTileSize / self.pixelsPerCell)
+        self.terrainShifted = True
 
-        print("updated environments")
 
     def algSelectCallback(self):
         text = self.AlgorithmSelect.currentText()
