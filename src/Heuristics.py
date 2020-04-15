@@ -22,7 +22,7 @@ class HeuristicMud(Heuristic): #High cost for making turns
         else:
             cost*= 2  #This is arbitrary change if needed
         
-        if(NodeToBeExplored.Environment == "Tree"):
+        if(NodeToBeExplored.Environment == "Trees"):
             cost += 10000000000000
         return cost
 
@@ -37,7 +37,7 @@ class HeuristicConcrete(Heuristic):
         if(CurrentNode.Environment != "Concrete" and NodeToBeExplored.Environment == "Concrete"):
             cost*=1.5
 
-        if(NodeToBeExplored.Environment == "Tree"):
+        if(NodeToBeExplored.Environment == "Trees"):
             cost += 10000000000000
 
         return cost
@@ -64,7 +64,7 @@ class HeuristicWater(Heuristic): #slows you down and damages you if stay in for 
             cost += 100000 #arbitrary value
         #print ("WATER")
 
-        if(NodeToBeExplored.Environment == "Tree"):
+        if(NodeToBeExplored.Environment == "Trees"):
             cost += 10000000000000
 
         return cost
@@ -76,7 +76,7 @@ class HeuristicTrees(Heuristic):
         """
         if the next node is a tree cost*=2
         """
-        if(NodeToBeExplored.Environment == "Tree"):
+        if(NodeToBeExplored.Environment == "Trees"):
             cost *= 2
         return cost
 
@@ -97,6 +97,6 @@ class HeuristicSand(Heuristic):
         else:
             if(NodeToBeExplored.Environment == "Sand"):
                 cost*= .7  #This allows us easier to turn
-        if(NodeToBeExplored.Environment == "Tree"):
+        if(NodeToBeExplored.Environment == "Trees"):
             cost += 10000000000000
         return cost

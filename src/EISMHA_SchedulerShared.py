@@ -27,7 +27,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
 
     #OVERLOADED FUNCTION
     def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):
-        
+        print(self.epsilon)
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
         newFrontierNodes = [] #needed for GUI

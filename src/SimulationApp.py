@@ -77,7 +77,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Path = []
         self.PathState = 0
 
-        self.epsilon = 30
+        self.epsilon = 70
 
         self.terrainShifted = False
 
@@ -715,7 +715,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                     shape.setTransformOriginPoint(QPoint(x, y))
                     shape.setPen(QPen(self.green))
                     shape.setBrush(QBrush(self.green, Qt.SolidPattern))
-                    #shape.setOpacity(0.5)
+                    shape.setOpacity(0.5)
                     self.DrawnTerrainSharedScene.append(shape)
                     self.SharedQueueScene.addItem(shape)
                 for index in result[2]:
@@ -726,7 +726,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                     shape.setTransformOriginPoint(QPoint(x, y))
                     shape.setPen(QPen(self.yellow))
                     shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
-                    #shape.setOpacity(0.5)
+                    shape.setOpacity(0.5)
                     self.DrawnTerrainSharedScene.append(shape)
                     self.SharedQueueScene.addItem(shape)
 
@@ -772,7 +772,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                         shape.setTransformOriginPoint(QPoint(x, y))
                         shape.setPen(QPen(self.green))
                         shape.setBrush(QBrush(self.green, Qt.SolidPattern))
-                        #shape.setOpacity(0.5)
+                        shape.setOpacity(0.5)
                         self.DrawnTerrainIndividualScene[key].append(shape)
                         self.IndividualQueueScenes[key].addItem(shape)
                 for key in result[1].keys():
@@ -784,7 +784,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                         shape.setTransformOriginPoint(QPoint(x, y))
                         shape.setPen(QPen(self.yellow))
                         shape.setBrush(QBrush(self.yellow, Qt.SolidPattern))
-                        #shape.setOpacity(0.5)
+                        shape.setOpacity(0.5)
                         self.DrawnTerrainIndividualScene[key].append(shape)
                         self.IndividualQueueScenes[key].addItem(shape)
 
@@ -884,16 +884,16 @@ class SimulationMap(QtWidgets.QMainWindow):
                     self.IndividualQueueScenes[key].addItem(CurrentTerrainObject.getGuiObject())
 
                     # Place Start
-                self.StartShapeShared = QGraphicsEllipseItem(self.StartNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
-                                                             self.StartNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+                self.StartShapeShared = QGraphicsEllipseItem(self.StartNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                             self.StartNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
                                                              10)
                 self.StartShapeShared.setPen(QPen(self.black))
                 self.StartShapeShared.setBrush(QBrush(self.blue, Qt.SolidPattern))
                 self.IndividualQueueScenes[key].addItem(self.StartShapeShared)
 
                 # Place End
-                self.EndShapeShared = QGraphicsEllipseItem(self.EndNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
-                                                           self.EndNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
+                self.EndShapeShared = QGraphicsEllipseItem(self.EndNode.column * self.pixelsPerCellNode - int(self.pixelsPerCell/2),
+                                                           self.EndNode.row * self.pixelsPerCellNode - int(self.pixelsPerCell/2), 10,
                                                            10)
                 self.EndShapeShared.setPen(QPen(self.black))
                 self.EndShapeShared.setBrush(QBrush(self.red, Qt.SolidPattern))
@@ -901,7 +901,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.MapNodeIndividual[key] = copy.deepcopy(self.MapNode)#needs fresh map for each queue
             row = self.StartNode.row
             col = self.StartNode.column
-            self.StartNodeIndividual[key] = self.MapNodeIndividual[key][row][col] #makes sure references line up
+            self.StartNodeIndividual[key] = self.MapNodeIndividual[key][row][col] #makes sure references line up #self.MapNodeIndividual[key][row][col] #makes sure references line up
             row = self.EndNode.row
             col = self.EndNode.column
             self.EndNodeIndividual[key] = self.MapNodeIndividual[key][row][col] #makes sure references line up
