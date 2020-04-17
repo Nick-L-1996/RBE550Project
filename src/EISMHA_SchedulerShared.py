@@ -1,6 +1,7 @@
 from SchedulersShared import *
 import random
 import sys
+import time
 class EISMHA_SchedulerShared(SchedulerShared):
     def __init__(self, map, epsilon):
         super().__init__(map)
@@ -27,7 +28,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
 
     #OVERLOADED FUNCTION
     def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):
-        print(self.epsilon)
+        time.sleep(5)
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
         newFrontierNodes = [] #needed for GUI

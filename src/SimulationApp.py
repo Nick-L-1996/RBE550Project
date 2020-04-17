@@ -243,6 +243,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.listMaps()
 
     def loadMap(self):
+        # THIS NEEDS TO CLEAR LAST MAP BUT DOESN'T
+        self.ClearObs()
         text = self.LoadCombo.currentText()
         if(text != ""):
             for item in self.DrawnTerrain:
