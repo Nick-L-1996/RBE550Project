@@ -77,7 +77,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Path = []
         self.PathState = 0
 
-        self.epsilon = 70
+        self.epsilon = 10
 
         self.terrainShifted = False
 
