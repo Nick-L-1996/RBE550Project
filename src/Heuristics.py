@@ -2,6 +2,7 @@ import numpy as np
 import random
 class Heuristic:
     def __init__(self):
+        self.type = "Concrete"
         pass
     def getHeuristic(self, CurrentNode, NodeToBeExplored, EndNode):
         return 0

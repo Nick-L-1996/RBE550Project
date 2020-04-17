@@ -22,7 +22,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
         # keys are objects that hold the ability to update the performance of the heuristics for each terrain
         self.TerrainPerformance = {
             "Water" : TerrainPerformanceTracker (heuristics,   [startingAlpha, 1, 1, 1, 1], [1, 1, 1, 1, 1], 100),
-            "Concrete" : TerrainPerformanceTracker(heuristics, [1, startingAlpha, 1, 1, 1], [1, 1, 1, 1, 1], 100),
+            "Concrete" : TerrainPerformanceTracker(heuristics, [1, 1, startingAlpha, 1, 1], [1, 1, 1, 1, 1], 100),
             "Sand" : TerrainPerformanceTracker (heuristics,    [1, 1, 1, 1, startingAlpha], [1, 1, 1, 1, 1], 100),
             "Trees" : TerrainPerformanceTracker (heuristics,   [1, 1, 1, startingAlpha, 1], [1, 1, 1, 1, 1], 100),
             "Mud" : TerrainPerformanceTracker (heuristics,     [1, startingAlpha, 1, 1, 1], [1, 1, 1, 1, 1], 100)
@@ -30,7 +30,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
 
     #OVERLOADED FUNCTION
     def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):
-        time.sleep(5)
+        # time.sleep(1)
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
         newFrontierNodes = [] #needed for GUI
@@ -64,16 +64,20 @@ class EISMHA_SchedulerShared(SchedulerShared):
            
             # Use the terrain type to get the best heuristic as of right now
             chosenHeuristic = self.TerrainPerformance[terrain_type].getBestHeuristic(exploiting)
-            
+            print(type(chosenHeuristic))
             # get the heuristic value of the neighbor using the chosen heuristic
             heuristicCost = chosenHeuristic.getHeuristic(currentNode, neighbor, endNode)
-
+            print("Heuristic Cost", heuristicCost) 
             if(heuristicCost < self.lastHeuristicValue):
                 #call updateMetaMethod which will reward that heuristic
                 self.TerrainPerformance[terrain_type].UpdateMetaMethod(True)
+                print("Rewarding",type(chosenHeuristic), "for", terrain_type, "\r\n")
             else:
                 # call updateMetaMethod which will punish that heuristic
                 self.TerrainPerformance[terrain_type].UpdateMetaMethod(False)
+                print("Punishment by DADDY",type(chosenHeuristic), "for", terrain_type, "\r\n")
+
+            self.lastHeuristicValue = heuristicCost
 
             # check a neighbor with all heuristics
             # for each key in the heuristic getters.
@@ -90,6 +94,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
                 #print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, neighbor.CostToTravel)
                 newFrontierNodes.append(neighbor)
                 FrontierQueue.append(neighbor)
+        print("Number of Expansions:", numberExpansions)
     
 
         # sort nodes in unvisited by their cost

@@ -126,8 +126,9 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.AlgorithmSelect.addItem("Shared MultiHeuristic A*")
         self.AlgorithmSelect.addItem("Shared MultiHeuristic Greedy Best First Search")
         self.AlgorithmSelect.addItem("Individual Greedy DTS")
-        self.AlgorithmSelect.addItem("Individual A* DTS")
+        self.AlgorithmSelect.addItem("Individual A* DTS")        
         self.AlgorithmSelect.addItem("EISMHA")
+
         self.AlgorithmSelect.activated.connect(self.algSelectCallback)
 
         self.AlgThread = AlgorithmThread(self)
@@ -628,10 +629,10 @@ class SimulationMap(QtWidgets.QMainWindow):
                 y = i * cellSizePixel + cellSizePixel/2
                 Shape = self.scene.itemAt(x, y, QTransform())
                 if (Shape != None):
-                    print(Shape)
+                    #print(Shape)
                     for item in self.DrawnTerrain:
                         if item.getGuiObject() == Shape:
-                            print("Have Terrain")
+                            #print("Have Terrain")
                             self.MapNode[i][j].setEnvironmentType(item.TerrainType)
                             break
                 else:
