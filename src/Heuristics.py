@@ -36,6 +36,7 @@ class HeuristicConcrete(Heuristic):
         increase cost by some amount (multiple) 
         """
         if(CurrentNode.Environment != "Concrete" and NodeToBeExplored.Environment == "Concrete"):
+            # print("Going from not concrete to concrete")
             cost*=1.5
 
         if(NodeToBeExplored.Environment == "Trees"):

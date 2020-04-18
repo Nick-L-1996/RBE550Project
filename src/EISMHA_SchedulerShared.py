@@ -39,6 +39,10 @@ class EISMHA_SchedulerShared(SchedulerShared):
         # get unexplored neighbors
         # for every neighbor find the lowest value across all heuristics
         numberExpansions = 0
+        terrainOfBestNeighbor = None
+        BestHeurPerfObjIdx = None
+        bestHeuristicValue = sys.maxsize
+
         for neighbor in neighbors:
             #print("Neighbor Node:", neighbor.row, neighbor.column)
             
@@ -63,21 +67,18 @@ class EISMHA_SchedulerShared(SchedulerShared):
                 exploiting = False
            
             # Use the terrain type to get the best heuristic as of right now
-            chosenHeuristic = self.TerrainPerformance[terrain_type].getBestHeuristic(exploiting)
-            print(type(chosenHeuristic))
+            [chosenHeuristic, index] = self.TerrainPerformance[terrain_type].getBestHeuristic(exploiting)
+            #print(type(chosenHeuristic))
             # get the heuristic value of the neighbor using the chosen heuristic
             heuristicCost = chosenHeuristic.getHeuristic(currentNode, neighbor, endNode)
-            print("Heuristic Cost", heuristicCost) 
-            if(heuristicCost < self.lastHeuristicValue):
-                #call updateMetaMethod which will reward that heuristic
-                self.TerrainPerformance[terrain_type].UpdateMetaMethod(True)
-                print("Rewarding",type(chosenHeuristic), "for", terrain_type, "\r\n")
-            else:
-                # call updateMetaMethod which will punish that heuristic
-                self.TerrainPerformance[terrain_type].UpdateMetaMethod(False)
-                print("Punishment by DADDY",type(chosenHeuristic), "for", terrain_type, "\r\n")
-
-            self.lastHeuristicValue = heuristicCost
+            #print("Heuristic Cost", heuristicCost) 
+            
+            print("HeuristicCost/bestHeuristic", heuristicCost, bestHeuristicValue)
+            if(heuristicCost < bestHeuristicValue):
+                bestHeuristicValue = heuristicCost
+                terrainOfBestNeighbor = terrain_type
+                BestHeurPerfObjIdx = index
+            
 
             # check a neighbor with all heuristics
             # for each key in the heuristic getters.
@@ -94,12 +95,28 @@ class EISMHA_SchedulerShared(SchedulerShared):
                 #print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, neighbor.CostToTravel)
                 newFrontierNodes.append(neighbor)
                 FrontierQueue.append(neighbor)
-        print("Number of Expansions:", numberExpansions)
-    
+
+        # This condition is making sure that we in fact had a neighbor worth exploring
+        # without this condition, if there are no new neighbors to explore, then terrainOfBestNeighbor
+        # and BestHeurPerfObjIdx are none, causing an error.*args, **kwargs
+        if(bestHeuristicValue < sys.maxsize):
+            if(bestHeuristicValue < self.lastHeuristicValue):
+                    #call updateMetaMethod which will reward that heuristic
+                    self.TerrainPerformance[terrainOfBestNeighbor].UpdateMetaMethod(BestHeurPerfObjIdx,True)
+                    print("Best/Last", bestHeuristicValue, self.lastHeuristicValue)
+                    print("Rewarded", type(self.TerrainPerformance[terrainOfBestNeighbor].HeuristicPerformanceObjectList[BestHeurPerfObjIdx].Heuristic))
+            else:
+                    # call updatexMetaMethod which will punish that heuristic
+                    print(terrainOfBestNeighbor)
+                    self.TerrainPerformance[terrainOfBestNeighbor].UpdateMetaMethod(BestHeurPerfObjIdx,False)
+                    print("Best/Last", bestHeuristicValue, self.lastHeuristicValue)
+                    print("Punishment", type(self.TerrainPerformance[terrainOfBestNeighbor].HeuristicPerformanceObjectList[BestHeurPerfObjIdx].Heuristic))
 
         # sort nodes in unvisited by their cost
         FrontierQueue.sort(key=lambda x: x.PriorityQueueCost)
-
+        print("Top Of Queue Heuristic Value:", FrontierQueue[0].Heuristic)
+        #Update last heuristic value with the heuristic value of the node about to be popped off the list
+        self.lastHeuristicValue = FrontierQueue[0].Heuristic
         # return Frontier Queue, newFrontierNodes, number of expansions
         return FrontierQueue, newFrontierNodes, numberExpansions
 
@@ -189,16 +206,16 @@ class TerrainPerformanceTracker:
             # the array structure we are grabbing from is (Heuristic Type, betaDistribution, index)
             # We use the index so we know which one to punish or reward later
             self.lastReturnedHeuristicIndex = heuristicBetaDistribution[0][2]
-            return heuristicBetaDistribution[0][0]
+            return (heuristicBetaDistribution[0][0], self.lastReturnedHeuristicIndex)
         else:
             # return second best Heuristic, update lastReturnedHeuristicIndex
             # the array structure we are grabbing from is (Heuristic Type, betaDistribution, index)
             # We use the index so we know which one to punish or reward later
             self.lastReturnedHeuristicIndex = heuristicBetaDistribution[1][2]
-            return heuristicBetaDistribution[1][0]
+            return (heuristicBetaDistribution[1][0], self.lastReturnedHeuristicIndex)
     
     # update heuristics based on performance
-    def UpdateMetaMethod(self, didBetter):
+    def UpdateMetaMethod(self, heuristicPerformanceObjectIndex, didBetter):
         """
         This rewards or punishes a heuristic depending on whether or not it has preformed better or worse than the previous heuristic. 
 
@@ -211,8 +228,8 @@ class TerrainPerformanceTracker:
         # If the heuristic performed better, then reward it
         if didBetter:
             # Access the last used Heuristic in the list and call it's rewardHeuristic function to reward it
-            self.HeuristicPerformanceObjectList[self.lastReturnedHeuristicIndex].rewardHeuristic()
+            self.HeuristicPerformanceObjectList[heuristicPerformanceObjectIndex].rewardHeuristic()
         # Otherwise punish it
         else:
             # Access the last used Heuristic in the list and call it's punishHeuristic function to punish it
-            self.HeuristicPerformanceObjectList[self.lastReturnedHeuristicIndex].punishHeuristic()
+            self.HeuristicPerformanceObjectList[heuristicPerformanceObjectIndex].punishHeuristic()
