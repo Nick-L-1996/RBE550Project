@@ -1,4 +1,13 @@
 TODO: 
+Add CSV testing
+    In GUI
+        CSV filename box
+        CSV number of runs box
+    Need to keep track of:
+        Start and End node locations
+        Map name associated with the test. I think we'd have to assume you can only do this with a saved map
+        Total Runtime
+        Total Expansions
 
-FIX BUGS
-Also can't end it early
+Maybe later if we care but not a priority:
+Allow early termination of algorithm
