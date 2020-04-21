@@ -77,7 +77,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Path = []
         self.PathState = 0
 
-        self.epsilon = 10
+        self.epsilon = 0
 
         self.terrainShifted = False
 
@@ -135,12 +135,13 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.AlgThread.signal.connect(self.UpdateMap)
 
         ########################################### initialize to SMHA*#################################
-        self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*")
+        self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*", verbose = False)
         self.isAlgorithmMultiQueue = False
         ################################################################################################
         self.showAlgCheckBox.stateChanged.connect(self.toggleShowExpansions)
         self.pathShown = False
         self.ExpansionsShown = False
+        self.numberOfExpansions = 0
 
     def toggleShowExpansions(self):
         if self.pathShown:
@@ -178,8 +179,9 @@ class SimulationMap(QtWidgets.QMainWindow):
 
     def chooseQueue(self):
         key = self.QueueSelect.currentText()
-        print("Current View =" + key)
+        #print("Current View =" + key)
         self.GridView.setScene(self.IndividualQueueScenes[key])
+        
     def SetSimSpeed(self):
         text = self.SimSpeedCB.currentText()
         if text == "1x":
@@ -200,7 +202,7 @@ class SimulationMap(QtWidgets.QMainWindow):
     def listMaps(self):
         self.LoadCombo.clear()
         if os.path.exists("MapBuilderMaps"):
-            print("Found Directory")
+            # print("Found Directory")
             for file in os.listdir("MapBuilderMaps"):
                 if file.endswith(".mb"):
                     self.MapNames.append(file)
@@ -213,24 +215,33 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation) #Populates Map
         self.SimRunning = True
         text = self.AlgorithmSelect.currentText()
-        if text == "Shared MultiHeuristic A*":
-            self.constructSharedQueueAnimationScene()
-            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None) #update algorithm with new values
-        elif text == "Shared MultiHeuristic Greedy Best First Search":
-            self.constructSharedQueueAnimationScene()
-            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None)  # update algorithm with new values
-        elif text == "Individual Greedy DTS":
-            self.constructIndependentQueueAnimationScene()
-            self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
-        elif text == "Individual A* DTS":
-            self.constructIndependentQueueAnimationScene()
-            self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
-        elif text == "EISMHA":
-            self.constructSharedQueueAnimationScene()
-            self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, self.epsilon) #update algorithm with new values
-        self.StatusLabel.setText("Status: Running")
+        # Don't run if start or end are in trees
+        if not (self.StartNode.Environment == "Trees" or self.EndNode.Environment == "Trees"):
+            if text == "Shared MultiHeuristic A*":
+                print("RR Shared MultiHeuristic A*")
+                self.constructSharedQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None) #update algorithm with new values
+            elif text == "Shared MultiHeuristic Greedy Best First Search":
+                print("Shared MultiHeuristic Greedy Best First Search")
+                self.constructSharedQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, None)  # update algorithm with new values
+            elif text == "Individual Greedy DTS":
+                print("Individual Greedy DTS")
+                self.constructIndependentQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
+            elif text == "Individual A* DTS":
+                print("Individual A* DTS")
+                self.constructIndependentQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
+            elif text == "EISMHA":
+                print("EISMHA")
+                self.constructSharedQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode, self.epsilon) #update algorithm with new values
+            self.StatusLabel.setText("Status: Running")
 
-        self.AlgThread.start()
+            self.AlgThread.start()
+        else:
+            print ("No path is possible. Either the start or the end node is located within a tree.")
 
     def saveMap(self):
         name = self.SaveNameEntry.text()
@@ -274,7 +285,7 @@ class SimulationMap(QtWidgets.QMainWindow):
             self.BuildShape()
 
     def ClearSearch(self):
-        print("Clearing Search")
+        # print("Clearing Search")
         self.StatusLabel.setText("Status: Ready")
         self.QueueSelect.clear()
         self.NumExpLBL.setText("# Expansions: 0")
@@ -598,7 +609,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.ShapeMakerView.setScene(self.sceneShape)
 
     def ClearObs(self):
-        print("Clearing objects")
+        # print("Clearing objects")
         self.ClearSearch()
         for item in self.DrawnTerrain:
             self.scene.removeItem(item.getGuiObject())
@@ -639,9 +650,9 @@ class SimulationMap(QtWidgets.QMainWindow):
                     self.MapNode[i][j].setEnvironmentType("Concrete") #default is concrete
 
         self.StartNode = self.MapNode[int(self.StartGui.row * numCells / self.GridCellsGui)][int(self.StartGui.column * numCells / self.GridCellsGui)]
-        print("START NODE POS BEFORE MODIFICATION", self.StartNode.xcoord, self.StartNode.ycoord)
+        # print("START NODE POS BEFORE MODIFICATION", self.StartNode.xcoord, self.StartNode.ycoord)
         self.EndNode = self.MapNode[int(self.EndGui.row * numCells / self.GridCellsGui)][int(self.EndGui.column * numCells / self.GridCellsGui)]
-        print("END NODE POS BEFORE MODIFICATION", self.EndNode.xcoord, self.EndNode.ycoord)
+        # print("END NODE POS BEFORE MODIFICATION", self.EndNode.xcoord, self.EndNode.ycoord)
         # Update DrawnTerrain to match MapNode Coordinates 
         ## NOTE: I have removed the deletion and recreation of the GUI object because it gets created as a different object, and fails 
         # The conditions made between lines 628 and 631. Now, when you hit clear and run again, it works as it should. 
@@ -666,26 +677,30 @@ class SimulationMap(QtWidgets.QMainWindow):
     def algSelectCallback(self):
         text = self.AlgorithmSelect.currentText()
         if text == "Shared MultiHeuristic A*":
-            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*")
+            # print("RR Shared MultiHeuristic A*")
+            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*", verbose = False)
             self.isAlgorithmMultiQueue = False
         elif text == "Shared MultiHeuristic Greedy Best First Search":
-            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHGBFS")
+            # print("Shared MultiHeuristic Greedy Best First Search)
+            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHGBFS", verbose = False)
             self.isAlgorithmMultiQueue = False
         elif text == "Individual Greedy DTS":
-            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual, self.EndNodeIndividual, algorithm="DTSGreedy")
+            # print("Individual Greedy DTS")
+            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual, self.EndNodeIndividual, algorithm="DTSGreedy",  verbose = False)
             self.isAlgorithmMultiQueue = True
         elif text == "Individual A* DTS":
-            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual,self.EndNodeIndividual, algorithm="DTSA*")
+            # print("Individual A* DTS")
+            self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual,self.EndNodeIndividual, algorithm="DTSA*",  verbose = False)
             self.isAlgorithmMultiQueue = True
         elif text == "EISMHA":
-            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, self.epsilon, algorithm="EISMHA")
+            # print("EISMHA")
+            self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, self.epsilon, algorithm="EISMHA",  verbose = False)
             self.isAlgorithmMultiQueue = False
 
 
     # Callback for Alg Thread
     def UpdateMap(self, result):
         # result in general form [Boolean:Done, List:AddedExploration, List:AddedFrontier, List:Path, Int:NumExpansions]
-
         #################################################################################################
         # Shared Queue
         ################################################################################################
@@ -792,7 +807,7 @@ class SimulationMap(QtWidgets.QMainWindow):
                         self.IndividualQueueScenes[key].addItem(shape)
 
     def constructSharedQueueAnimationScene(self):
-        print("Constructing new scene")
+        #print("Constructing new scene")
         self.QueueSelect.clear()
         self.pixelsPerCellNode = self.Graphicsheight/self.GridCellsSimulation
         self.SharedQueueScene = QGraphicsScene()
@@ -855,7 +870,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.QueueSelect.clear()
         for key in self.CurrentAlgorithm.Queues.keys():
             self.DrawnTerrainIndividualScene[key] = []
-            print("Constructing new scene")
+            # print("Constructing new scene")
             self.IndividualQueueScenes[key] = QGraphicsScene()
             # draw box
             line = QLineF(-1, -1, self.Graphicswidth+1, -1)
@@ -918,29 +933,34 @@ class AlgorithmThread(QThread):
     def __init__(self, gui):
         QThread.__init__(self)
         self.gui = gui
+        self.startTime = 0
+        self.endTime = 0
+        self.numExp = 0
 
     def run(self):
         Done = False # Becomes True when goal is found
         #################################################################################################
         # Shared Queue
         ################################################################################################
+        self.numExp = 0
+        #Start the timer for algorithm
+        self.startTime = time.time()
         if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
             self.gui.StartNode.CostToTravel = 0
             FrontierQueue = [self.gui.StartNode]
             ExploredQueue = []
             Path = []
-            numExp = 0
             while (Done == False):
                 time.sleep(self.gui.SimSpeed)
                 GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
                 if (GoalFound):
                     Done = True
-                    print("Found Goal")
+                    # print("Found Goal")
                 elif (QueueEmpty):
                     Done = True
                     print("Queue Empty")
-                numExp += newnumExp
-                self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, numExp])
+                self.numExp += newnumExp
+                self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, self.numExp])
                 ExploredQueue.append(NewExploredNode)
 
             #finds path for GUI and to be sent to Turtle Bot
@@ -958,10 +978,11 @@ class AlgorithmThread(QThread):
                 Path.append(self.gui.StartNode)
                 Path.reverse()
                 self.gui.Path = Path
-                self.signal.emit([True, [], [], Path, numExp])
+                self.signal.emit([True, [], [], Path, self.numExp])
             else:
-                self.signal.emit([True, [], [], [], numExp])
-            print("Done")
+                self.signal.emit([True, [], [], [], self.numExp])
+            # print("Done")
+
         #################################################################################################
         #Multi Queue
         ################################################################################################
@@ -969,7 +990,6 @@ class AlgorithmThread(QThread):
             FrontierQueue = {}
             ExploredQueue = {}
             Path = []  # Only one path
-            numExp = 0
             for key in self.gui.CurrentAlgorithm.Queues.keys():
                 self.gui.StartNodeIndividual[key].CostToTravel = 0
                 FrontierQueue[key] = [self.gui.StartNodeIndividual[key]]
@@ -992,33 +1012,15 @@ class AlgorithmThread(QThread):
 
                 if (isGoalFound):
                     Done = True
-                    print("Found Goal")
+                    # print("Found Goal")
                 #Need to check if all Queues are empty
                 elif (isQueueEmpty):
                     Done = True
                     print("Queue Empty")
-                numExp += newnumExp
-                self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, numExp])
+                self.numExp += newnumExp
+                self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, self.numExp])
 
             # finds path for GUI and to be sent to Turtle Bot
-            """
-            1) Initially, we make take the start node and shift it to gazebo units the same way we place obstacles in Gazebo
-
-            2) Now, for each node in the path, we're going to want to shift the x and y coordinates into Gazebo units (or RVIZ)
-            3) So, now we have the XY Coordinates of the nodes in the path in Gazebo units
-            4) We want to send this information to some tool (NavStack, or something else), that will move the robot along the path
-
-            4/1 to 4/9:
-            If we can use the NavStack (probably)
-                -- Let's just try to get the robot moving from origin to clicked point in RVIZ
-                -- try to shift XY from sim world to RVIZ XY
-                -- sequentially send points to go to from Python
-                -- integrate into 550 Project
-
-            Use pickle to write 'Path' object, so ROS can unpack it. 
-
-            Else: Do it ourselvese (probably won't have to)
-            """
             if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
                 StartReached = False
                 CurrentNode = self.gui.EndNodeIndividual[GoalKey]
@@ -1032,14 +1034,20 @@ class AlgorithmThread(QThread):
                 Path.append(self.gui.StartNodeIndividual[GoalKey])
                 Path.reverse()
                 self.gui.Path = Path
-                self.signal.emit([True, {}, {}, [GoalKey, Path], numExp])
+                self.signal.emit([True, {}, {}, [GoalKey, Path], self.numExp])
             else:
-                self.signal.emit([True, {}, {}, [], numExp])
-            print("Done")
-
-
+                self.signal.emit([True, {}, {}, [], self.numExp])
+            # print("Done")
+        #End the timer for algorithm
+        self.endTime = time.time()
+        totalTime = self.endTime - self.startTime
+        formattedTime = "{:.3f}".format(totalTime)
+        print("\nTotal Time: ", str(formattedTime) + "s")
+        print("Number of Expansions: ", self.numExp)
+        print("\n ===== \n")
 
 if __name__ == '__main__':
+    print("\n ===== \n")
     app = QApplication(sys.argv)
     window = SimulationMap()
     window.show()

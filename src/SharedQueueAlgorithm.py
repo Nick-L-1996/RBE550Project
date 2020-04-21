@@ -5,7 +5,7 @@ import time
 
 class SharedQueueAlgorithm:
     #self.Algorithm_RR = SMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "Round Robin")
-    def __init__(self, map, end, otherArguements, algorithm ="EISMHA"):
+    def __init__(self, map, end, otherArguements, algorithm ="EISMHA", verbose = False):
         # algorithm needs the map and goal, and other arguements if necassary
         # For example, WA* needs an epsilon value to work so this can be added here. If multiple
         # other arguements are needed use a list or some other data structure
@@ -14,6 +14,7 @@ class SharedQueueAlgorithm:
         # Need world object from GUI
         self.algorithm = algorithm
         self.map = map
+        self.verbose = verbose
         self.scheduler, self.isGreedy = self.getScheduler(algorithm)
 
     #This function is needed for compatibility with GUI
@@ -28,11 +29,11 @@ class SharedQueueAlgorithm:
     # Returns a scheduler corresponding to input
     def getScheduler(self, algorithm):
         if algorithm == "MHA*":
-            return RR_SchedulerShared(self.map), False #Since this is the shared queue algorithm class, using the round robin scheduler and not being greedy (i.e A*) makes this SMHA*
+            return RR_SchedulerShared(self.map, self.verbose), False #Since this is the shared queue algorithm class, using the round robin scheduler and not being greedy (i.e A*) makes this SMHA*
         elif algorithm =="MHGBFS":
-            return RR_SchedulerShared(self.map), True #this is Shared Multiheuristic Greedy Best First Search
+            return RR_SchedulerShared(self.map, self.verbose), True #this is Shared Multiheuristic Greedy Best First Search
         elif algorithm == "EISMHA":
-            return EISMHA_SchedulerShared(self.map, self.otherArgs), False
+            return EISMHA_SchedulerShared(self.map, self.otherArgs, self.verbose), False
 
     # This function is needed for compatibility with GUI
     #takes in the frontier and explored queues

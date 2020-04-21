@@ -3,13 +3,13 @@ import random
 import sys
 import time
 class EISMHA_SchedulerShared(SchedulerShared):
-    def __init__(self, map, epsilon):
-        super().__init__(map)
+    def __init__(self, map, epsilon, verbose = False):
+        super().__init__(map, verbose)
         self.lastHeuristicValue = sys.maxsize
         # Epsilon value (thershold) for probability of exploitation  
         self.epsilon = epsilon
+        self.verbose = verbose
         startingAlpha = 150
-
         
         #List of heuristics available for EISMHA Terrain Performance Metric
         heuristics = [HeuristicWater(),
@@ -35,7 +35,8 @@ class EISMHA_SchedulerShared(SchedulerShared):
         neighbors = self.getNodeNeighbors(currentNode)
         newFrontierNodes = [] #needed for GUI
         
-        #print("Current Node:", currentNode.row, currentNode.column)
+        if (self.verbose):
+            print("Current Node:", currentNode.row, currentNode.column)
         # get unexplored neighbors
         # for every neighbor find the lowest value across all heuristics
         numberExpansions = 0
@@ -44,20 +45,22 @@ class EISMHA_SchedulerShared(SchedulerShared):
         bestHeuristicValue = sys.maxsize
 
         for neighbor in neighbors:
-            #print("Neighbor Node:", neighbor.row, neighbor.column)
+            if (self.verbose):
+                print("Neighbor Node:", neighbor.row, neighbor.column)
             
             # if this neighbor was marked as visited
             if(neighbor in Explored): ## removed check for trees
-
-               #print("Visited", neighbor.row, neighbor.column)
-               continue
+                if (self.verbose):
+                    print("Visited", neighbor.row, neighbor.column)
+                continue
                 
             #grab the terrain type
             terrain_type = neighbor.Environment
 
             # get the edge cost between the current node and neighbor use same key as heuristic dict because the strings are the same.
             edgeCost = currentNode.getNeighborEdgeCost(neighbor)
-            #print("Edge Cost:", edgeCost)
+            if (self.verbose):
+                print("Edge Cost:", edgeCost)
 
             # Random number generator to determine if exploiting
             rand = random.random() * 100
@@ -68,12 +71,13 @@ class EISMHA_SchedulerShared(SchedulerShared):
            
             # Use the terrain type to get the best heuristic as of right now
             [chosenHeuristic, index] = self.TerrainPerformance[terrain_type].getBestHeuristic(exploiting)
-            #print(type(chosenHeuristic))
+            if (self.verbose):
+                print("Chosen Heuristic: ",type(chosenHeuristic))
             # get the heuristic value of the neighbor using the chosen heuristic
             heuristicCost = chosenHeuristic.getHeuristic(currentNode, neighbor, endNode)
-            #print("Heuristic Cost", heuristicCost) 
+            ##print("Heuristic Cost", heuristicCost) 
             
-            print("HeuristicCost/bestHeuristic", heuristicCost, bestHeuristicValue)
+            #print("HeuristicCost/bestHeuristic", heuristicCost, bestHeuristicValue)
             if(heuristicCost < bestHeuristicValue):
                 bestHeuristicValue = heuristicCost
                 terrainOfBestNeighbor = terrain_type
@@ -92,7 +96,8 @@ class EISMHA_SchedulerShared(SchedulerShared):
             numberExpansions+=1
             # if neighbor is not in the unvisited list, add it to unvisited
             if (neighbor not in FrontierQueue):
-                #print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, neighbor.CostToTravel)
+                if (self.verbose):
+                    print ("Added Neighbor:", neighbor.row, neighbor.column, chosenHeuristic, neighbor.Environment, neighbor.CostToTravel)
                 newFrontierNodes.append(neighbor)
                 FrontierQueue.append(neighbor)
 
@@ -100,21 +105,25 @@ class EISMHA_SchedulerShared(SchedulerShared):
         # without this condition, if there are no new neighbors to explore, then terrainOfBestNeighbor
         # and BestHeurPerfObjIdx are none, causing an error.*args, **kwargs
         if(bestHeuristicValue < sys.maxsize):
+            # We now reward/punish once an expansion 
             if(bestHeuristicValue < self.lastHeuristicValue):
                     #call updateMetaMethod which will reward that heuristic
                     self.TerrainPerformance[terrainOfBestNeighbor].UpdateMetaMethod(BestHeurPerfObjIdx,True)
-                    print("Best/Last", bestHeuristicValue, self.lastHeuristicValue)
-                    print("Rewarded", type(self.TerrainPerformance[terrainOfBestNeighbor].HeuristicPerformanceObjectList[BestHeurPerfObjIdx].Heuristic))
+                    if (self.verbose):
+                        print("Terrain of Best Neighbor: ", terrainOfBestNeighbor)
+                        print("Best/Last", bestHeuristicValue, self.lastHeuristicValue)
+                        print("Rewarded", type(self.TerrainPerformance[terrainOfBestNeighbor].HeuristicPerformanceObjectList[BestHeurPerfObjIdx].Heuristic))
             else:
                     # call updatexMetaMethod which will punish that heuristic
-                    print(terrainOfBestNeighbor)
                     self.TerrainPerformance[terrainOfBestNeighbor].UpdateMetaMethod(BestHeurPerfObjIdx,False)
-                    print("Best/Last", bestHeuristicValue, self.lastHeuristicValue)
-                    print("Punishment", type(self.TerrainPerformance[terrainOfBestNeighbor].HeuristicPerformanceObjectList[BestHeurPerfObjIdx].Heuristic))
+                    if (self.verbose):
+                        print("Terrain of Best Neighbor: ", terrainOfBestNeighbor)
+                        print("Best/Last", bestHeuristicValue, self.lastHeuristicValue)
+                        print("Punishment", type(self.TerrainPerformance[terrainOfBestNeighbor].HeuristicPerformanceObjectList[BestHeurPerfObjIdx].Heuristic))
 
         # sort nodes in unvisited by their cost
         FrontierQueue.sort(key=lambda x: x.PriorityQueueCost)
-        print("Top Of Queue Heuristic Value:", FrontierQueue[0].Heuristic)
+        #print("Top Of Queue Heuristic Value:", FrontierQueue[0].Heuristic)
         #Update last heuristic value with the heuristic value of the node about to be popped off the list
         self.lastHeuristicValue = FrontierQueue[0].Heuristic
         # return Frontier Queue, newFrontierNodes, number of expansions

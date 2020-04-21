@@ -6,9 +6,9 @@ from TerrainCosts import *
 
 class SchedulerShared:
     #scheduler needs to know what the world looks like
-    def __init__(self, map):
+    def __init__(self, map, verbose):
         self.map = map
-
+        self.verbose = verbose
         ## Data Structure for Heuristic Value getters
         self.heuristicGetters = {
             "Water": HeuristicWater(),

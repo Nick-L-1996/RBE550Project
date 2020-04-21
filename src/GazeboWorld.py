@@ -24,7 +24,7 @@ class GazeboWorld:
             self.tbTree = xml.ElementTree(file="turtlebot3_burger.urdf.xacro")
             self.tbRoot = self.tbTree.getroot()
         except:
-            print("Turtlebot 3 data missing")
+            # print("Turtlebot 3 data missing")
             self.tbTree = "None"
             self.tbRoot = "None"
 

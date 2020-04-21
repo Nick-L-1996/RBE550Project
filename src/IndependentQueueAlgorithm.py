@@ -5,7 +5,7 @@ from Heuristics import *
 # We can easily make it A* though
 class IndependentQueueAlgorithm:
     # self.Algorithm_RR = IMHAStar(self.Map, self.StartPoint, self.EndPoint, scheduler = "DTS")
-    def __init__(self, map, start, end, algorithm="DTSGreedy"):
+    def __init__(self, map, start, end, algorithm="DTSGreedy", verbose = False):
         self.Queues = {}
         # add all Queues to list
         self.Queues["Concrete"] = HeuristicConcrete()
@@ -13,6 +13,7 @@ class IndependentQueueAlgorithm:
         self.Queues["Sand"] = HeuristicSand()
         self.Queues["Water"] = HeuristicWater()
         self.Queues["Trees"] = HeuristicTrees()
+        self.verbose = verbose
 
         self.algorithm = algorithm
         self.startNodeDict = start
@@ -25,11 +26,11 @@ class IndependentQueueAlgorithm:
         #the isGreedy object determines if the priority queue considers G + H or just H
 
     # Returns a scheduler corresponding to input. Made so we can add more in the future
-    def getScheduler(self, scheduler):
+    def getScheduler(self, scheduler,verbose = False):
         if scheduler == "DTSGreedy":
-            return DTS_SchedulerIndependent(self.mapDict, self.Queues), True
+            return DTS_SchedulerIndependent(self.mapDict, self.Queues, verbose = verbose), True
         elif scheduler =="DTSA*":
-            return DTS_SchedulerIndependent(self.mapDict, self.Queues), False
+            return DTS_SchedulerIndependent(self.mapDict, self.Queues, verbose = verbose), False
         return DTS_SchedulerIndependent(self.mapDict, self.Queues), True
 
 
@@ -58,7 +59,8 @@ class IndependentQueueAlgorithm:
         CurrentNodeDict[key] = [FrontierQueueDict[key][0]]
         FrontierQueueDict[key].remove(CurrentNodeDict[key][0])
         if CurrentNodeDict[key][0] == self.endNodeDict[key]:
-            print("found goal")
+            if(self.verbose):
+                print("found goal")
             GoalFoundDict[key] = True
         else:
             FrontierQueueDict[key], NewFrontierNodesDict[key], numExpansions = self.Expand(CurrentNodeDict[key][0], ExploredListDict[key],
@@ -76,8 +78,9 @@ class IndependentQueueAlgorithm:
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode, map)
         newFrontierNodes = []  # needed for GUI
-
-        print("Current Node:", currentNode.row, currentNode.column)
+        
+        if(self.verbose):
+            print("Current Node:", currentNode.row, currentNode.column)
         # get unexplored neighbors
         # for every neighbor find the lowest value across all heuristics
         numberExpansions = 0
@@ -96,8 +99,9 @@ class IndependentQueueAlgorithm:
             numberExpansions += 1
             # if neighbor is not in the frontier add it
             if (neighbor not in FrontierQueue):
-                print("Added Neighbor:", neighbor.row, neighbor.column, neighbor.Environment,
-                      neighbor.CostToTravel)
+                if(self.verbose):
+                    print("Added Neighbor:", neighbor.row, neighbor.column, neighbor.Environment,
+                        neighbor.CostToTravel)
                 newFrontierNodes.append(neighbor)
                 FrontierQueue.append(neighbor)
         # sort nodes in frontier by their cost
