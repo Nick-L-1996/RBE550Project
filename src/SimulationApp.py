@@ -110,6 +110,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.makeFieldMap()
         self.MapNames = []
         self.listMaps()
+        self.createCSVFolder()
         self.QueueSelect.activated.connect(self.chooseQueue)
 
         self.SimSpeed = 0.2
@@ -134,14 +135,123 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.AlgThread = AlgorithmThread(self)
         self.AlgThread.signal.connect(self.UpdateMap)
 
+        self.MassTestThread = MassTestThread(self)
+        self.MassTestThread.signal.connect(self.massTestingCallback)
+
         ########################################### initialize to SMHA*#################################
         self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*", verbose = False)
         self.isAlgorithmMultiQueue = False
         ################################################################################################
         self.showAlgCheckBox.stateChanged.connect(self.toggleShowExpansions)
+        self.AnimateCB.setChecked(True)
+        self.AnimateCB.stateChanged.connect(self.toggleAnimate)
+        self.okToAnimate = True
         self.pathShown = False
         self.ExpansionsShown = False
         self.numberOfExpansions = 0
+
+        self.MassTestingModeCheckBox.setChecked(False)
+        self.MassTestingModeCheckBox.stateChanged.connect(self.toggleMassTestMode)
+        self.MassTestMode = False
+        self.RunMassTestBTN.setEnabled(False)
+        self.RunMassTestBTN.clicked.connect(self.runMassTesting)
+        self.CSVFileEntry.setEnabled(False)
+        self.NumRunsEntry.setEnabled(False)
+        self.NumRunsEntry.setText("100")
+
+        self.numberOfRuns = 100
+        self.CSVFileName = ""
+
+    def runMassTesting(self):
+        self.CSVFileName = self.CSVFileEntry.text() #String for CSV file name
+        if self.CSVFileName =="":
+            self.CSVFileName = "SimTest"
+            self.CSVFileEntry.setText(self.CSVFileName)
+
+        try:
+            self.numberOfRuns = int(self.NumRunsEntry.text())  #integer for number of runs
+        except:
+            print("Invalid number")
+            self.numberOfRuns = 100
+            self.NumRunsEntry.setText("100")
+        self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation)  # Populates Map
+        self.SimRunning = True
+        text = self.AlgorithmSelect.currentText()
+        # Don't run if start or end are in trees
+        if not (self.StartNode.Environment == "Trees" or self.EndNode.Environment == "Trees"):
+            if text == "Shared MultiHeuristic A*":
+                print("RR Shared MultiHeuristic A*")
+                self.constructSharedQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode,
+                                                       None)  # update algorithm with new values
+            elif text == "Shared MultiHeuristic Greedy Best First Search":
+                print("Shared MultiHeuristic Greedy Best First Search")
+                self.constructSharedQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode,
+                                                       None)  # update algorithm with new values
+            elif text == "Individual Greedy DTS":
+                print("Individual Greedy DTS")
+                self.constructIndependentQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
+            elif text == "Individual A* DTS":
+                print("Individual A* DTS")
+                self.constructIndependentQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNodeIndividual, self.EndNodeIndividual, None)
+            elif text == "EISMHA":
+                print("EISMHA")
+                self.constructSharedQueueAnimationScene()
+                self.CurrentAlgorithm.updateParameters(self.MapNode, self.EndNode,
+                                                       self.epsilon)  # update algorithm with new values
+            self.StatusLabel.setText("Status: Running")
+
+            self.MassTestThread.start()
+        else:
+            print("No path is possible. Either the start or the end node is located within a tree.")
+
+
+    def massTestingCallback(self, result):
+        if(result[0]==False):
+            self.StatusLabel.setText("Status: Running Simulation " + str(result[1]) + " of " + str(self.numberOfRuns))
+        else:
+            self.StatusLabel.setText("Status: Successfully ran " + str(self.numberOfRuns) + " simulations")
+
+    def toggleMassTestMode(self):
+        if self.MassTestingModeCheckBox.isChecked():
+            self.MassTestMode = True
+            self.AnimateCB.setChecked(False)
+            self.RunMassTestBTN.setEnabled(True)
+            self.CSVFileEntry.setEnabled(True)
+            self.NumRunsEntry.setEnabled(True)
+            index = self.SimSpeedCB.findText("Instant", QtCore.Qt.MatchFixedString)
+            self.SimSpeedCB.setCurrentIndex(index)
+            self.SetSimSpeed()
+            self.SimSpeedCB.setEnabled(False)
+            self.AnimateCB.setEnabled(False)
+            self.RunBTN.setEnabled(False)
+            self.GenYAMLBTN.setEnabled(False)
+            self.CLRBTN.setEnabled(False)
+        else:
+            self.MassTestMode = False
+            self.AnimateCB.setChecked(True)
+            self.RunMassTestBTN.setEnabled(False)
+            self.CSVFileEntry.setEnabled(False)
+            self.NumRunsEntry.setEnabled(False)
+            index = self.SimSpeedCB.findText("1x", QtCore.Qt.MatchFixedString)
+            self.SimSpeedCB.setCurrentIndex(index)
+            self.SetSimSpeed()
+            self.SimSpeedCB.setEnabled(True)
+            self.AnimateCB.setEnabled(True)
+            self.RunBTN.setEnabled(True)
+            self.GenYAMLBTN.setEnabled(True)
+            self.CLRBTN.setEnabled(True)
+
+
+
+    def toggleAnimate(self):
+        if self.AnimateCB.isChecked():
+            self.okToAnimate = True
+        else:
+            self.okToAnimate = False
 
     def toggleShowExpansions(self):
         if self.pathShown:
@@ -199,6 +309,12 @@ class SimulationMap(QtWidgets.QMainWindow):
         elif text == "Instant":
             self.SimSpeed = 0
 
+    def createCSVFolder(self):
+        if os.path.exists("SimulationCSVs"):
+            pass
+        else:
+            os.mkdir("SimulationCSVs")
+
     def listMaps(self):
         self.LoadCombo.clear()
         if os.path.exists("MapBuilderMaps"):
@@ -212,6 +328,8 @@ class SimulationMap(QtWidgets.QMainWindow):
             os.mkdir("MapBuilderMaps")
 
     def runAlg(self):
+        if self.MassTestMode == False:
+            self.AnimateCB.setEnabled(False)
         self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation) #Populates Map
         self.SimRunning = True
         text = self.AlgorithmSelect.currentText()
@@ -701,13 +819,16 @@ class SimulationMap(QtWidgets.QMainWindow):
     # Callback for Alg Thread
     def UpdateMap(self, result):
         # result in general form [Boolean:Done, List:AddedExploration, List:AddedFrontier, List:Path, Int:NumExpansions]
+        if self.MassTestMode == False:
+            self.NumExpLBL.setText("# Expansions: " + str(result[4]))
         #################################################################################################
         # Shared Queue
         ################################################################################################
         if self.isAlgorithmMultiQueue == False:
-            self.NumExpLBL.setText("# Expansions: " + str(result[4]))
             if (result[0] == True):
-                self.showAlgCheckBox.setChecked(True)
+                if self.MassTestMode == False:
+                    self.showAlgCheckBox.setChecked(True)
+                    self.AnimateCB.setEnabled(True)
                 self.Path = result[3]
                 for index in range(0, len(result[3])-1):
                     SelectedNode1 = result[3][index]
@@ -752,15 +873,17 @@ class SimulationMap(QtWidgets.QMainWindow):
         # Independent Queue
         ################################################################################################
         elif self.isAlgorithmMultiQueue == True:
-            self.NumExpLBL.setText("# Expansions: " + str(result[4]))
             if (result[0] == True):
-                self.showAlgCheckBox.setChecked(True)
+                if self.MassTestMode == False:
+                    self.AnimateCB.setEnabled(True)
+                    self.showAlgCheckBox.setChecked(True)
                 PathKey = result[3][0]
                 self.GoalKey = PathKey
                 self.Path = result[3][1]
-                index = self.QueueSelect.findText(PathKey, QtCore.Qt.MatchFixedString)
-                self.chooseQueue()
-                self.QueueSelect.setCurrentIndex(index)
+                if self.MassTestMode == False:
+                    index = self.QueueSelect.findText(PathKey, QtCore.Qt.MatchFixedString)
+                    self.chooseQueue()
+                    self.QueueSelect.setCurrentIndex(index)
                 for index in range(0, len(result[3][1]) - 1):
                     SelectedNode1 = result[3][1][index]
                     x1 = int(SelectedNode1.column * self.pixelsPerCellNode)
@@ -960,7 +1083,8 @@ class AlgorithmThread(QThread):
                     Done = True
                     print("Queue Empty")
                 self.numExp += newnumExp
-                self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, self.numExp])
+                if self.gui.okToAnimate:
+                    self.signal.emit([False, [NewExploredNode], NewFrontierNodes, Path, self.numExp])
                 ExploredQueue.append(NewExploredNode)
 
             #finds path for GUI and to be sent to Turtle Bot
@@ -1018,7 +1142,8 @@ class AlgorithmThread(QThread):
                     Done = True
                     print("Queue Empty")
                 self.numExp += newnumExp
-                self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, self.numExp])
+                if self.gui.okToAnimate:
+                    self.signal.emit([False, NewExploredNode, NewFrontierNodes, Path, self.numExp])
 
             # finds path for GUI and to be sent to Turtle Bot
             if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
@@ -1045,6 +1170,147 @@ class AlgorithmThread(QThread):
         print("\nTotal Time: ", str(formattedTime) + "s")
         print("Number of Expansions: ", self.numExp)
         print("\n ===== \n")
+
+class MassTestThread(QThread):
+    signal = pyqtSignal('PyQt_PyObject')
+    def __init__(self, gui):
+        QThread.__init__(self)
+        self.gui = gui
+        self.startTime = 0
+        self.endTime = 0
+        self.numExp = 0
+        self.formattedTime = 0
+
+    def run(self):
+        #TODO Gabe and Rich
+        CSVFileName = self.gui.CSVFileName
+        mapName = self.gui.SaveNameEntry.text()  # name of map taken from the text entry box of the gui
+        StartNode = self.gui.StartNode
+        EndNode = self.gui.EndNode
+        ##########################################################################################
+        #this is where youd want to log the map and start and end positions
+
+
+        ##########################################################################################
+        for i in range(0, self.gui.numberOfRuns):
+            self.signal.emit([False, i+1])
+            numExpansions, time, foundGoal = self.runSingle()
+            ####################################################################################
+            # this is where youd want to grab the number of expansions and time and add it to the csv
+
+            ####################################################################################
+        self.signal.emit([True])
+        ###################################################################################
+        # this is where youd want to save you CSV to the SimulationCSVs folder.
+        # that folder is automatically generated at the start up of this app if it does not already exist
+
+    def runSingle(self):
+        Done = False # Becomes True when goal is found
+        #################################################################################################
+        # Shared Queue
+        ################################################################################################
+        self.numExp = 0
+        goalFound = False
+        #Start the timer for algorithm
+        self.startTime = time.time()
+        if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
+            self.gui.StartNode.CostToTravel = 0
+            FrontierQueue = [self.gui.StartNode]
+            ExploredQueue = []
+            Path = []
+            while (Done == False):
+                time.sleep(self.gui.SimSpeed)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
+                if (GoalFound):
+                    Done = True
+                    # print("Found Goal")
+                elif (QueueEmpty):
+                    Done = True
+                    print("Queue Empty")
+                self.numExp += newnumExp
+                ExploredQueue.append(NewExploredNode)
+
+            #finds path for GUI and to be sent to Turtle Bot
+            if (self.gui.EndNode.parent is not None):
+                goalFound = True
+                StartReached = False
+
+                CurrentNode = self.gui.EndNode
+                while (StartReached == False):
+
+                    if (CurrentNode == self.gui.StartNode):
+                        StartReached = True
+                    else:
+                        Path.append(CurrentNode)
+                        CurrentNode = CurrentNode.parent
+                Path.append(self.gui.StartNode)
+                Path.reverse()
+                self.gui.Path = Path
+            else:
+                goalFound = False
+
+
+        #################################################################################################
+        #Multi Queue
+        ################################################################################################
+        elif self.gui.isAlgorithmMultiQueue == True:
+            FrontierQueue = {}
+            ExploredQueue = {}
+            Path = []  # Only one path
+            for key in self.gui.CurrentAlgorithm.Queues.keys():
+                self.gui.StartNodeIndividual[key].CostToTravel = 0
+                FrontierQueue[key] = [self.gui.StartNodeIndividual[key]]
+                ExploredQueue[key] = []
+
+            GoalKey = None
+            while (Done == False):
+                time.sleep(self.gui.SimSpeed)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(
+                    ExploredQueue, FrontierQueue)
+                isGoalFound = False
+                isQueueEmpty = True
+                for key in self.gui.CurrentAlgorithm.Queues.keys():
+                    if GoalFound[key]:
+                        GoalKey = key
+                    isGoalFound = isGoalFound | GoalFound[key] # ors all booleans for Done in each queue. If one is True algorithm is done
+                    isQueueEmpty = isQueueEmpty & QueueEmpty[key] # if all queues are empty algorithm is done
+                    for item in NewExploredNode[key]:
+                        ExploredQueue[key].append(item)
+
+                if (isGoalFound):
+                    Done = True
+
+                #Need to check if all Queues are empty
+                elif (isQueueEmpty):
+                    Done = True
+                self.numExp += newnumExp
+
+            if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
+                goalFound = True
+                StartReached = False
+                CurrentNode = self.gui.EndNodeIndividual[GoalKey]
+                while (StartReached == False):
+
+                    if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
+                        StartReached = True
+                    else:
+                        Path.append(CurrentNode)
+                        CurrentNode = CurrentNode.parent
+                Path.append(self.gui.StartNodeIndividual[GoalKey])
+                Path.reverse()
+                self.gui.Path = Path
+            else:
+                goalFound = False
+
+        #End the timer for algorithm
+        self.endTime = time.time()
+        totalTime = self.endTime - self.startTime
+        formattedTime = "{:.3f}".format(totalTime)
+        print("\nTotal Time: ", str(formattedTime) + "s")
+        print("Number of Expansions: ", self.numExp)
+        print("\n ===== \n")
+        return self.numExp, formattedTime, goalFound
+
 
 if __name__ == '__main__':
     print("\n ===== \n")
