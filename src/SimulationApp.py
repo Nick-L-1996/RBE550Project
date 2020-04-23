@@ -373,6 +373,11 @@ class SimulationMap(QtWidgets.QMainWindow):
             print("Saved Map")
         self.listMaps()
 
+        #Load the saved map name into the combo box
+        index = self.LoadCombo.findText(name + ".mb", QtCore.Qt.MatchFixedString)
+        if(index > 0):
+            self.LoadCombo.setCurrentIndex(index)
+
     def loadMap(self):
         # THIS NEEDS TO CLEAR LAST MAP BUT DOESN'T
         self.ClearObs()
@@ -1174,32 +1179,53 @@ class MassTestThread(QThread):
         self.endTime = 0
         self.numExp = 0
         self.formattedTime = 0
+
+        # This boolean is used to track if we are on the same set of tests, so we don't write to a bunch
+        # of different files
         self.firstSet = True
+        self.mapName = None
 
     def run(self):
-        #TODO Gabe and Rich
-        CSVFileName = self.gui.CSVFileName
-        mapName = self.gui.SaveNameEntry.text()  # name of map taken from the text entry box of the gui
+        #grab the csv name, map name, start and end node, and algorithm used
+        previousMapName = self.mapName
+        self.mapName = self.gui.SaveNameEntry.text()  # name of map taken from the text entry box of the gui
+        CSVFileName = self.gui.CSVFileName + "_" + self.mapName
         startNode = self.gui.StartNode
         endNode = self.gui.EndNode
         algorithmName = self.gui.AlgorithmSelect.currentText()
+
+        # Automatically make a new CSV file in the event that the map has changed
+        if(self.mapName != previousMapName):
+            self.firstSet = True
+
+        # Percentage used for gauging progress in running/saving algorithm results
         percentComplete = 0
-        if (len(mapName) == 0):
+
+        # If not running from saved map, just specify that it's unsaved in the test
+        if (len(self.mapName) == 0):
             mapName = "Unsaved Map"
-        
-        with open("SimulationCSVs/"+CSVFileName, 'a', newline='') as csvfile:
+
+        # Open the file name and begin writing to it. When it closes, it will be saved in SimulationCSVs folder.
+        with open("SimulationCSVs/" + CSVFileName, 'a', newline='') as csvfile:
             simResultsWriter = csv.writer(csvfile, delimiter=",")
+            # Check if this is this the first test set of this map. Print headers if it is first test
             if(self.firstSet):
-                simResultsWriter.writerow(['number of expansions', 'execution time', 'map name', 'start', 'end', 'algorithm'])
+                simResultsWriter.writerow(['number of expansions', 'execution time', 'start', 'end', 'algorithm'])
                 self.firstSet = False
 
+            # Run every algorithm for specified number of times
             for i in range(0, self.gui.numberOfRuns):
+                # Return that the goal has not been found
                 self.signal.emit([False, i+1])
+                # Run specified algorithm once and return testing data: number of expansions, total solving time, and if it found the goal
                 numExpansions, time, foundGoal = self.runSingle()
-                simResultsWriter.writerow([numExpansions, time, str(mapName), str(startNode.xcoord) + ", " + str(startNode.ycoord), 
+                # Write the testing results to the file
+                simResultsWriter.writerow([numExpansions, time, str(startNode.xcoord) + ", " + str(startNode.ycoord),
                                                                         str(endNode.xcoord) + ", " + str(endNode.ycoord), str(algorithmName)])
+                # Update and print percentage complete
                 percentComplete = (i+1)/self.gui.numberOfRuns*100
                 print(percentComplete, "%")
+
 
         self.signal.emit([True])
         ###################################################################################
@@ -1234,12 +1260,12 @@ class MassTestThread(QThread):
 
             #finds path for GUI and to be sent to Turtle Bot
             if (self.gui.EndNode.parent is not None):
-
                 goalFound = True
                 StartReached = False
 
                 CurrentNode = self.gui.EndNode
                 while (StartReached == False):
+
                     if (CurrentNode == self.gui.StartNode):
                         StartReached = True
                     else:
@@ -1292,6 +1318,7 @@ class MassTestThread(QThread):
                 StartReached = False
                 CurrentNode = self.gui.EndNodeIndividual[GoalKey]
                 while (StartReached == False):
+
                     if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
                         StartReached = True
                     else:
@@ -1300,11 +1327,8 @@ class MassTestThread(QThread):
                 Path.append(self.gui.StartNodeIndividual[GoalKey])
                 Path.reverse()
                 self.gui.Path = Path
-
             else:
                 goalFound = False
-
-
 
         #End the timer for algorithm
         self.endTime = time.time()
