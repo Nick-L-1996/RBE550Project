@@ -51,12 +51,9 @@ class DTS_SchedulerIndependent(SchedulerIndependent):
             if(self.verbose):
                 print("Punished Queue")
 
-    # clear queues probabilites by creating a new queObject
-    # def clearQueues(self):
-    #     del self.DTSQueues[:]
-    #     for key in self.queueKeys:
-    #         self.DTSQueues.append(DTSQueueObject(key, self.Queues[key], 10))
-    #     pass
+    def clearData(self):
+        for item in self.DTSQueues:
+            item.clearData()
 
 class DTSQueueObject:
     def __init__(self, key, Queue, C):
@@ -66,6 +63,10 @@ class DTSQueueObject:
         self.beta = 1
         self.bestH = 10000000000
         self.Queue = Queue
+
+    def clearData(self):
+        self.alpha = 1
+        self.beta = 1
 
     def rewardQueue(self):
         self.alpha+=1

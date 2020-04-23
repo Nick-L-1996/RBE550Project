@@ -335,6 +335,7 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.SimRunning = True
         text = self.AlgorithmSelect.currentText()
         # Don't run if start or end are in trees
+        self.CurrentAlgorithm.clearData()
         if not (self.StartNode.Environment == "Trees" or self.EndNode.Environment == "Trees"):
             if text == "Shared MultiHeuristic A*":
                 print("RR Shared MultiHeuristic A*")
@@ -1233,6 +1234,7 @@ class MassTestThread(QThread):
         # that folder is automatically generated at the start up of this app if it does not already exist
 
     def runSingle(self):
+        self.gui.CurrentAlgorithm.clearData()#clears any data from previous run
         Done = False # Becomes True when goal is found
         #################################################################################################
         # Shared Queue

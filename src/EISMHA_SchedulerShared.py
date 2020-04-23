@@ -27,6 +27,9 @@ class EISMHA_SchedulerShared(SchedulerShared):
             "Trees" : TerrainPerformanceTracker (heuristics,   [1, 1, 1, startingAlpha, 1], [1, 1, 1, 1, 1], 100),
             "Mud" : TerrainPerformanceTracker (heuristics,     [1, startingAlpha, 1, 1, 1], [1, 1, 1, 1, 1], 100)
         }
+    def clearData(self):
+        for key in self.TerrainPerformance.keys():
+            self.TerrainPerformance[key].clearData()
 
     #OVERLOADED FUNCTION
     def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):
@@ -144,6 +147,11 @@ class HeuristicPerformanceObject:
         self.alpha = alpha # number of times rewarded
         self.beta = beta # number of times punished
         self.Heuristic = Heuristic # heuristic object to keep track of
+        self.alphaOriginal = alpha
+        self.betaOriginal = beta
+    def clearData(self):
+        self.alpha = self.alphaOriginal
+        self.beta = self.betaOriginal
 
     # rewarding a heuristic means incrementing alpha
     def rewardHeuristic(self):
@@ -185,7 +193,9 @@ class TerrainPerformanceTracker:
         for index in range(0, len(Heuristics)):
             # We will construct the HeuristicPerformanceObject with the proper heuristic, the corresponding starting alpha and beta, and the history variable, C. 
             self.HeuristicPerformanceObjectList.append(HeuristicPerformanceObject(Heuristics[index], ListOfStartingAlphas[index], ListOfStartingBetas[index], C))
-    
+    def clearData(self):
+        for item in self.HeuristicPerformanceObjectList:
+            item.clearData()
     def getBestHeuristic(self, Exploiting):
         """
         This method iterates through the list of EISMHAHeuristic Objects (the objects that essentially hold heuristic performance), and determines

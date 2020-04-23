@@ -34,7 +34,8 @@ class SharedQueueAlgorithm:
             return RR_SchedulerShared(self.map, self.verbose), True #this is Shared Multiheuristic Greedy Best First Search
         elif algorithm == "EISMHA":
             return EISMHA_SchedulerShared(self.map, self.otherArgs, self.verbose), False
-
+    def clearData(self):
+        self.scheduler.clearData()
     # This function is needed for compatibility with GUI
     #takes in the frontier and explored queues
     #returns 6 pieces of information

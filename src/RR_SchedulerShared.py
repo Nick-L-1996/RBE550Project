@@ -3,7 +3,9 @@ class RR_SchedulerShared(SchedulerShared):
     def __init__(self, map, verbose = False):
         super().__init__(map, verbose)
         self.verbose = verbose
-        pass
+
+    def clearData(self):
+        pass # No data to clear
 
     #OVERLOADED FUNCTION
     def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):

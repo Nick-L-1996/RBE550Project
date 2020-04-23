@@ -24,7 +24,8 @@ class IndependentQueueAlgorithm:
         # scheduler goes here
         self.scheduler, self.isGreedy = self.getScheduler(algorithm)
         #the isGreedy object determines if the priority queue considers G + H or just H
-
+    def clearData(self):
+        self.scheduler.clearData()
     # Returns a scheduler corresponding to input. Made so we can add more in the future
     def getScheduler(self, scheduler,verbose = False):
         if scheduler == "DTSGreedy":
