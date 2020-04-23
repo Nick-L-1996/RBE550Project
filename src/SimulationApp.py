@@ -767,12 +767,13 @@ class SimulationMap(QtWidgets.QMainWindow):
         # Update DrawnTerrain to match MapNode Coordinates 
         ## NOTE: I have removed the deletion and recreation of the GUI object because it gets created as a different object, and fails 
         # The conditions made between lines 628 and 631. Now, when you hit clear and run again, it works as it should. 
-
-        # for item in self.DrawnTerrain:
-        #     item.clearGuiObject()
+        DrawnTerrainStorage = []
+        for item in self.DrawnTerrain:
+            DrawnTerrainStorage.append(item.getGuiObject())
+            item.clearGuiObject()
         self.DrawnTerrainForGazebo = copy.deepcopy(self.DrawnTerrain)
-        # for item in self.DrawnTerrain:
-        #     item.recreateGuiObject()
+        for i in range(0, len(self.DrawnTerrain)):
+            self.DrawnTerrain[i].GuiObject = DrawnTerrainStorage[i]
 
         
         for i in range(0, len(self.DrawnTerrainForGazebo)):
@@ -1186,7 +1187,7 @@ class MassTestThread(QThread):
         if (len(mapName) == 0):
             mapName = "Unsaved Map"
         
-        with open(CSVFileName, 'a', newline='') as csvfile:
+        with open("SimulationCSVs/"+CSVFileName, 'a', newline='') as csvfile:
             simResultsWriter = csv.writer(csvfile, delimiter=",")
             if(self.firstSet):
                 simResultsWriter.writerow(['number of expansions', 'execution time', 'map name', 'start', 'end', 'algorithm'])
@@ -1233,12 +1234,12 @@ class MassTestThread(QThread):
 
             #finds path for GUI and to be sent to Turtle Bot
             if (self.gui.EndNode.parent is not None):
+
                 goalFound = True
                 StartReached = False
 
                 CurrentNode = self.gui.EndNode
                 while (StartReached == False):
-
                     if (CurrentNode == self.gui.StartNode):
                         StartReached = True
                     else:
@@ -1291,7 +1292,6 @@ class MassTestThread(QThread):
                 StartReached = False
                 CurrentNode = self.gui.EndNodeIndividual[GoalKey]
                 while (StartReached == False):
-
                     if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
                         StartReached = True
                     else:
@@ -1300,8 +1300,11 @@ class MassTestThread(QThread):
                 Path.append(self.gui.StartNodeIndividual[GoalKey])
                 Path.reverse()
                 self.gui.Path = Path
+
             else:
                 goalFound = False
+
+
 
         #End the timer for algorithm
         self.endTime = time.time()
@@ -1310,6 +1313,17 @@ class MassTestThread(QThread):
         print("\nTotal Time: ", str(formattedTime) + "s")
         print("Number of Expansions: ", self.numExp)
         print("\n ===== \n")
+        # Clears map for next test
+        if self.gui.isAlgorithmMultiQueue == True:
+            for key in self.gui.CurrentAlgorithm.Queues.keys():
+                for item in self.gui.MapNodeIndividual[key]:
+                    for anotherItem in item:
+                        anotherItem.clearData()
+        else:
+            for item in self.gui.MapNode:
+                for anotherItem in item:
+                    anotherItem.clearData()
+
         return self.numExp, formattedTime, goalFound
 
 

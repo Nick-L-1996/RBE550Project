@@ -14,7 +14,12 @@ class Node:
         self.Environment = "Concrete"
         self.costClass = EdgeCostConcrete()
         self.RobotDirection = np.array([1, 1]) # Need this to determine if the robot is turning or not for mud heuristic
-
+    def clearData(self):
+        self.parent = None
+        self.CostToTravel = 10000000000
+        self.Heuristic = 10000000000
+        self.PriorityQueueCost = 1000000000000
+        self.RobotDirection = np.array([1, 1])
     def isInList(self, nodeList):
         inListFlag = False
         for node in nodeList:
