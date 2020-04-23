@@ -12,6 +12,7 @@ from GazeboWorld import *
 import numpy as np  
 import pickle
 import copy
+import csv
 from SharedQueueAlgorithm import *
 from IndependentQueueAlgorithm import *
 import os
@@ -376,6 +377,8 @@ class SimulationMap(QtWidgets.QMainWindow):
         # THIS NEEDS TO CLEAR LAST MAP BUT DOESN'T
         self.ClearObs()
         text = self.LoadCombo.currentText()
+        # When you load a map populate the name inso the saveNameEntry
+        self.SaveNameEntry.setText(text[:-3])
         if(text != ""):
             for item in self.DrawnTerrain:
                 self.scene.removeItem(item.getGuiObject())
@@ -440,16 +443,6 @@ class SimulationMap(QtWidgets.QMainWindow):
         with open("FinalPath.pkl", 'wb') as saveLocation:
             pickle.dump(newPath, saveLocation)
         self.GazeboWorld.makeWorldFromList(self.DrawnTerrainForGazebo)
-
-        #startGazeboCoords = self.GazeboWorld.shiftSimToGazebo(self.StartNode.xcoord, self.StartNode.ycoord)
-        # enter starting x y theta
-        #self.GazeboWorld.changeTB3Origin([startGazeboCoords[0],startGazeboCoords[1], 0])
-        # tilePose = self.GazeboWorld.shiftSimToGazebo(startGazeboCoords[0], startGazeboCoords[1])
-        # material = "Trees"
-        # self.GazeboWorld.makeCellTile(tilePose, "Square", 100, material, "test")        
-        # self.GazeboWorld.writeFile("test_world.world", self.tree)'
-
-        ## TODO FIX THE GAZEBO WORLD CREATION - DOESN'T SAVE AND OPEN THE WORLD
 
     def MudSelect(self):
         self.TerrainType = "Mud"
@@ -1180,25 +1173,33 @@ class MassTestThread(QThread):
         self.endTime = 0
         self.numExp = 0
         self.formattedTime = 0
+        self.firstSet = True
 
     def run(self):
         #TODO Gabe and Rich
         CSVFileName = self.gui.CSVFileName
         mapName = self.gui.SaveNameEntry.text()  # name of map taken from the text entry box of the gui
-        StartNode = self.gui.StartNode
-        EndNode = self.gui.EndNode
-        ##########################################################################################
-        #this is where youd want to log the map and start and end positions
+        startNode = self.gui.StartNode
+        endNode = self.gui.EndNode
+        algorithmName = self.gui.AlgorithmSelect.currentText()
+        percentComplete = 0
+        if (len(mapName) == 0):
+            mapName = "Unsaved Map"
+        
+        with open(CSVFileName, 'a', newline='') as csvfile:
+            simResultsWriter = csv.writer(csvfile, delimiter=",")
+            if(self.firstSet):
+                simResultsWriter.writerow(['number of expansions', 'execution time', 'map name', 'start', 'end', 'algorithm'])
+                self.firstSet = False
 
+            for i in range(0, self.gui.numberOfRuns):
+                self.signal.emit([False, i+1])
+                numExpansions, time, foundGoal = self.runSingle()
+                simResultsWriter.writerow([numExpansions, time, str(mapName), str(startNode.xcoord) + ", " + str(startNode.ycoord), 
+                                                                        str(endNode.xcoord) + ", " + str(endNode.ycoord), str(algorithmName)])
+                percentComplete = (i+1)/self.gui.numberOfRuns*100
+                print(percentComplete, "%")
 
-        ##########################################################################################
-        for i in range(0, self.gui.numberOfRuns):
-            self.signal.emit([False, i+1])
-            numExpansions, time, foundGoal = self.runSingle()
-            ####################################################################################
-            # this is where youd want to grab the number of expansions and time and add it to the csv
-
-            ####################################################################################
         self.signal.emit([True])
         ###################################################################################
         # this is where youd want to save you CSV to the SimulationCSVs folder.
