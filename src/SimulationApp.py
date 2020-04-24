@@ -1234,7 +1234,7 @@ class MassTestThread(QThread):
             mapName = "Unsaved Map"
 
         # Open the file name and begin writing to it. When it closes, it will be saved in SimulationCSVs folder.
-        with open("SimulationCSVs/" + CSVFileName, 'a', newline='') as csvfile:
+        with open("SimulationCSVs/" + CSVFileName + ".csv", 'a', newline='') as csvfile:
             simResultsWriter = csv.writer(csvfile, delimiter=",")
             # Check if this is this the first test set of this map. Print headers if it is first test
             if(self.firstSet):

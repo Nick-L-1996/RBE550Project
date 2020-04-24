@@ -54,11 +54,11 @@ class HeuristicWater(Heuristic): #slows you down and damages you if stay in for 
             parentterrain = "None"
         """
         If we transition from mud or sand, the first node in water has a lower cost, because we are getting cleaned
-        so, multiply cost by (0,1] (random)
+        so, multiply by .7 (lower cost)
         """
         if(CurrentNode.Environment == "Mud" or CurrentNode.Environment == "Sand"):
             if(NodeToBeExplored.Environment == "Water"):
-                cost*= random.uniform(0,1)
+                cost*= .7
 
 
         #check if three waters in a row, damages car

@@ -19,6 +19,10 @@ class EdgeCostMud(TerrainCosts): #High cost for making turns
         else:
             cost*= 2  #This is arbitrary change if needed
 
+        # Add some 'noise' to the edge cost
+        if(randomVar):
+            cost*= random.uniform(.8,1.21)
+
         #cost+=random.randint(0, 20)# random cost to simulate the terrain not being perfect. Change values or disable if needed
         return cost
 
@@ -37,6 +41,9 @@ class EdgeCostConcrete(TerrainCosts):
         if(NodeToBeExplored.Environment == "Tree"):
             cost += 10000000000000
         
+        # Add some 'noise' to the edge cost
+        if(randomVar):
+            cost*= random.uniform(.8,1.21)
         #cost += random.randint(0,20)  # random cost to simulate the terrain not being perfect. Change values or disable if needed
         #print ("Default concrete")
         return cost
@@ -53,14 +60,19 @@ class EdgeCostWater(TerrainCosts): #slows you down and damages you if stay in fo
         
         """
         If we transition from mud or sand, the first node in water has a lower cost, because we are getting cleaned
-        so, multiply cost by (0,1] (random)
+        so, multiply cost by .8 (lowers cost)
         """
         if(CurrentNode.Environment == "Mud" or CurrentNode.Environment == "Sand"):
             if(NodeToBeExplored.Environment == "Water"):
-                cost*= random.uniform(0,1)
+                cost*= .8
 
         if NodeToBeExplored.Environment == "Water" and CurrentNode.Environment == "Water" and parentterrain == "Water":
             cost += 100000 #arbitrary value
+
+         # Add some 'noise' to the edge cost
+        if(randomVar):
+            cost*= random.uniform(.8,1.21)
+
         #cost += random.randint(0,20)  # random cost to simulate the terrain not being perfect. Change values or disable if needed
         return cost
 
@@ -78,6 +90,10 @@ class EdgeCostTrees(TerrainCosts):
         if(NodeToBeExplored.Environment == "Tree"):
             cost *= 2
         
+         # Add some 'noise' to the edge cost
+        if(randomVar):
+            cost*= random.uniform(.8,1.2)
+
         #cost += random.randint(0,20)  # random cost to simulate the terrain not being perfect. Change values or disable if needed
         return cost
 
@@ -96,5 +112,9 @@ class EdgeCostSand(TerrainCosts):
                 cost*= .7  #This allows us easier to turn
         if(NodeToBeExplored.Environment == "Tree"):
             cost += 10000000000000
+            
+         # Add some 'noise' to the edge cost
+        if(randomVar):
+            cost*= random.uniform(.8,1.21)
 
         return cost
