@@ -78,7 +78,9 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.Path = []
         self.PathState = 0
 
-        self.epsilon = 0
+        self.epsilon = 0.3
+        self.epsilonEntry.setText("0.3")
+        self.epsilonEntry.setEnabled(False)
 
         self.terrainShifted = False
 
@@ -163,6 +165,13 @@ class SimulationMap(QtWidgets.QMainWindow):
         self.numberOfRuns = 100
         self.CSVFileName = ""
 
+        self.RandomVarCheckBox.setChecked(False)
+        self.RandomVar = False
+        self.RandomVarCheckBox.stateChanged.connect(self.toggleRandomVarCallback)
+
+    def toggleRandomVarCallback(self):
+        self.RandomVar = self.RandomVarCheckBox.isChecked()
+
     def runMassTesting(self):
         self.CSVFileName = self.CSVFileEntry.text() #String for CSV file name
         if self.CSVFileName =="":
@@ -175,6 +184,14 @@ class SimulationMap(QtWidgets.QMainWindow):
             print("Invalid number")
             self.numberOfRuns = 100
             self.NumRunsEntry.setText("100")
+        #Get epsilon value
+        try:
+            self.epsilon = abs(float(self.epsilonEntry.text()))
+        except:
+            self.epsilon = 0.3
+            self.epsilonEntry.setText("0.3")
+
+
         self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation)  # Populates Map
         self.SimRunning = True
         text = self.AlgorithmSelect.currentText()
@@ -329,6 +346,11 @@ class SimulationMap(QtWidgets.QMainWindow):
             os.mkdir("MapBuilderMaps")
 
     def runAlg(self):
+        try:
+            self.epsilon = abs(float(self.epsilonEntry.text()))
+        except:
+            self.epsilon = 0.3
+            self.epsilonEntry.setText("0.3")
         if self.MassTestMode == False:
             self.AnimateCB.setEnabled(False)
         self.generateNodeMap(self.GazeboTileSize, self.GridCellsSimulation) #Populates Map
@@ -798,22 +820,27 @@ class SimulationMap(QtWidgets.QMainWindow):
             # print("RR Shared MultiHeuristic A*")
             self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*", verbose = False)
             self.isAlgorithmMultiQueue = False
+            self.epsilonEntry.setEnabled(False)
         elif text == "Shared MultiHeuristic Greedy Best First Search":
             # print("Shared MultiHeuristic Greedy Best First Search)
             self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHGBFS", verbose = False)
             self.isAlgorithmMultiQueue = False
+            self.epsilonEntry.setEnabled(False)
         elif text == "Individual Greedy DTS":
             # print("Individual Greedy DTS")
             self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual, self.EndNodeIndividual, algorithm="DTSGreedy",  verbose = False)
             self.isAlgorithmMultiQueue = True
+            self.epsilonEntry.setEnabled(False)
         elif text == "Individual A* DTS":
             # print("Individual A* DTS")
             self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual,self.EndNodeIndividual, algorithm="DTSA*",  verbose = False)
             self.isAlgorithmMultiQueue = True
+            self.epsilonEntry.setEnabled(False)
         elif text == "EISMHA":
             # print("EISMHA")
             self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, self.epsilon, algorithm="EISMHA",  verbose = False)
             self.isAlgorithmMultiQueue = False
+            self.epsilonEntry.setEnabled(True)
 
 
     # Callback for Alg Thread
@@ -1075,7 +1102,7 @@ class AlgorithmThread(QThread):
             Path = []
             while (Done == False):
                 time.sleep(self.gui.SimSpeed)
-                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue, self.gui.RandomVar)
                 if (GoalFound):
                     Done = True
                     # print("Found Goal")
@@ -1123,7 +1150,7 @@ class AlgorithmThread(QThread):
             while (Done == False):
                 time.sleep(self.gui.SimSpeed)
                 GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(
-                    ExploredQueue, FrontierQueue)
+                    ExploredQueue, FrontierQueue, self.gui.RandomVar)
                 isGoalFound = False
                 isQueueEmpty = True
                 for key in self.gui.CurrentAlgorithm.Queues.keys():
@@ -1250,7 +1277,7 @@ class MassTestThread(QThread):
             Path = []
             while (Done == False):
                 time.sleep(self.gui.SimSpeed)
-                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue)
+                GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(ExploredQueue, FrontierQueue, self.gui.RandomVar)
                 if (GoalFound):
                     Done = True
                     # print("Found Goal")
@@ -1296,7 +1323,7 @@ class MassTestThread(QThread):
             while (Done == False):
                 time.sleep(self.gui.SimSpeed)
                 GoalFound, NewFrontierNodes, NewExploredNode, QueueEmpty, FrontierQueue, newnumExp = self.gui.CurrentAlgorithm.run(
-                    ExploredQueue, FrontierQueue)
+                    ExploredQueue, FrontierQueue, self.gui.RandomVar)
                 isGoalFound = False
                 isQueueEmpty = True
                 for key in self.gui.CurrentAlgorithm.Queues.keys():

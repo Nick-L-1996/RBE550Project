@@ -3,11 +3,11 @@ import random
 class TerrainCosts:
     def __init__(self):
         pass
-    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored):
+    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored, randomVar):
         return 0
 
 class EdgeCostMud(TerrainCosts): #High cost for making turns
-    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored):
+    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored, randomVar):
         #calculate if the current direction of the robot is the same as the movement to explore a frontier node
         directionVector1 = np.array(CurrentNode.RobotDirection)
         directionVector2 = np.array([NodeToBeExplored.xcoord-CurrentNode.xcoord, NodeToBeExplored.ycoord-CurrentNode.ycoord])
@@ -23,7 +23,7 @@ class EdgeCostMud(TerrainCosts): #High cost for making turns
         return cost
 
 class EdgeCostConcrete(TerrainCosts):
-    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored): #current node not used
+    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored, randomVar): #current node not used
         cost = np.sqrt(
             np.power(NodeToBeExplored.xcoord - CurrentNode.xcoord, 2) + np.power(NodeToBeExplored.ycoord - CurrentNode.ycoord, 2))
         
@@ -42,7 +42,7 @@ class EdgeCostConcrete(TerrainCosts):
         return cost
 
 class EdgeCostWater(TerrainCosts): #slows you down and damages you if stay in for 3 grid cells
-    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored):
+    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored, randomVar):
         cost = 1.1*np.sqrt(
             np.power(NodeToBeExplored.xcoord - CurrentNode.xcoord, 2) + np.power(NodeToBeExplored.ycoord - CurrentNode.ycoord, 2))
         try:
@@ -65,7 +65,7 @@ class EdgeCostWater(TerrainCosts): #slows you down and damages you if stay in fo
         return cost
 
 class EdgeCostTrees(TerrainCosts):
-    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored):
+    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored, randomVar):
         if NodeToBeExplored.Environment == "Trees":
              cost = 10000000000000 #Arbitrary
         else:
@@ -82,7 +82,7 @@ class EdgeCostTrees(TerrainCosts):
         return cost
 
 class EdgeCostSand(TerrainCosts):
-    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored):
+    def getTerrainEdgeCost(self, CurrentNode, NodeToBeExplored, randomVar):
         cost = 2 * np.sqrt(
             np.power(NodeToBeExplored.xcoord - CurrentNode.xcoord, 2) + np.power(NodeToBeExplored.ycoord - CurrentNode.ycoord, 2))
         directionVector1 = np.array(CurrentNode.RobotDirection)

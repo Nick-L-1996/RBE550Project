@@ -46,7 +46,7 @@ class SharedQueueAlgorithm:
     #5 returns the frontier queue
     #6 number of expansions
 
-    def run(self, ExploredList, FrontierQueue):
+    def run(self, ExploredList, FrontierQueue, randomVar):
         QueueEmpty = False
         NewFrontierNodes = []
         GoalFound = False
@@ -59,7 +59,7 @@ class SharedQueueAlgorithm:
         else:
         # updated unVisited queue with unvisited queue and cost of neighbors
         # sort unvisited queue by total cost
-            FrontierQueue, NewFrontierNodes, numExpansions = self.scheduler.Expand(CurrentNode, ExploredList, FrontierQueue, self.endNode, self.isGreedy)
+            FrontierQueue, NewFrontierNodes, numExpansions = self.scheduler.Expand(CurrentNode, ExploredList, FrontierQueue, self.endNode, self.isGreedy, randomVar)
         if (len(FrontierQueue) == 0):
             QueueEmpty = True
         

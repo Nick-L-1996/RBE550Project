@@ -32,7 +32,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
             self.TerrainPerformance[key].clearData()
 
     #OVERLOADED FUNCTION
-    def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy):
+    def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy, randomVar):
         # time.sleep(1)
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode)
@@ -61,7 +61,7 @@ class EISMHA_SchedulerShared(SchedulerShared):
             terrain_type = neighbor.Environment
 
             # get the edge cost between the current node and neighbor use same key as heuristic dict because the strings are the same.
-            edgeCost = currentNode.getNeighborEdgeCost(neighbor)
+            edgeCost = currentNode.getNeighborEdgeCost(neighbor, randomVar)
             if (self.verbose):
                 print("Edge Cost:", edgeCost)
 

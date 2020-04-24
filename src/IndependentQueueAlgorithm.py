@@ -44,7 +44,7 @@ class IndependentQueueAlgorithm:
         self.otherArgs = otherArguements
         self.scheduler, self.isGreedy = self.getScheduler(self.algorithm)
 
-    def run(self, ExploredListDict, FrontierQueueDict):
+    def run(self, ExploredListDict, FrontierQueueDict, randomVar):
         QueueEmptyDict = {}
         NewFrontierNodesDict = {}
         GoalFoundDict = {}
@@ -66,7 +66,7 @@ class IndependentQueueAlgorithm:
         else:
             FrontierQueueDict[key], NewFrontierNodesDict[key], numExpansions = self.Expand(CurrentNodeDict[key][0], ExploredListDict[key],
                                                                                        FrontierQueueDict[key], self.endNodeDict[key],
-                                                                                       self.isGreedy, self.Queues[key], self.mapDict[key])
+                                                                                       self.isGreedy, self.Queues[key], self.mapDict[key], randomVar)
         if (len(FrontierQueueDict[key]) == 0):
             QueueEmptyDict[key] = True
 
@@ -74,7 +74,7 @@ class IndependentQueueAlgorithm:
         self.scheduler.UpdateMetaMethod(key, FrontierQueueDict[key][0].PriorityQueueCost)
         return GoalFoundDict, NewFrontierNodesDict, CurrentNodeDict, QueueEmptyDict, FrontierQueueDict, numExpansions
 
-    def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy, heuristic, map):
+    def Expand(self, currentNode, Explored, FrontierQueue, endNode, isGreedy, heuristic, map, randomVar):
 
         # get neighbors of current node
         neighbors = self.getNodeNeighbors(currentNode, map)
@@ -90,7 +90,7 @@ class IndependentQueueAlgorithm:
             if (neighbor in Explored):  ## removed check for trees
                 continue
 
-            edgeCost = currentNode.getNeighborEdgeCost(neighbor)
+            edgeCost = currentNode.getNeighborEdgeCost(neighbor, randomVar)
             heuristicCost = heuristic.getHeuristic(currentNode, neighbor, endNode)
             if isGreedy:
                 tempCost = heuristicCost
