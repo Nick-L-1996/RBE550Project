@@ -1,5 +1,4 @@
 import numpy as np
-import random
 class Heuristic:
     def __init__(self):
         self.type = "Concrete"
