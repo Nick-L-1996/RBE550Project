@@ -1238,7 +1238,7 @@ class MassTestThread(QThread):
             simResultsWriter = csv.writer(csvfile, delimiter=",")
             # Check if this is this the first test set of this map. Print headers if it is first test
             if(self.firstSet):
-                simResultsWriter.writerow(['number of expansions', 'execution time', 'start', 'end', 'algorithm'])
+                simResultsWriter.writerow(['number of expansions', 'execution time', 'start', 'end', 'algorithm', 'variance','epsilon'])
                 self.firstSet = False
 
             # Run every algorithm for specified number of times
@@ -1249,7 +1249,8 @@ class MassTestThread(QThread):
                 numExpansions, time, foundGoal = self.runSingle()
                 # Write the testing results to the file
                 simResultsWriter.writerow([numExpansions, time, str(startNode.xcoord) + ", " + str(startNode.ycoord),
-                                                                        str(endNode.xcoord) + ", " + str(endNode.ycoord), str(algorithmName)])
+                                                                        str(endNode.xcoord) + ", " + str(endNode.ycoord), 
+                                                                        str(algorithmName), str(self.gui.RandomVar), self.gui.epsilon])
                 # Update and print percentage complete
                 percentComplete = (i+1)/self.gui.numberOfRuns*100
                 print(percentComplete, "%")
