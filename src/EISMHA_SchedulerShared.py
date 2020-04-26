@@ -66,7 +66,8 @@ class EISMHA_SchedulerShared(SchedulerShared):
                 print("Edge Cost:", edgeCost)
 
             # Random number generator to determine if exploiting
-            rand = random.random() * 100
+            #rand = random.random() * 100
+            rand = random.uniform(0,1)
             if (rand > self.epsilon):
                 exploiting = True
             else:
