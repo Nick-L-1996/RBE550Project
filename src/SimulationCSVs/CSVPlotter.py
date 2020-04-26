@@ -31,7 +31,6 @@ class SchedulerCSVDataContainer:
         # number of instances each tracker has, so we can remove those 
         # that don't occur from the plot
         self.instances = 0
-
         self.epsilonConstant = epsilonConstant
 
     # Update all the lists.
@@ -122,7 +121,8 @@ class Plotter:
                     schedulerName = row[4]
                     variance = row[5]
                     epsilon = row[6]
-                    cost = row[7]
+                    cost = float(row[7])
+                    
                     # Use this new data to update the information about the scheduler
                     self.scheduler[schedulerName].updateData(expansions, time, variance, epsilon, cost)
                 firstRow = False
@@ -212,6 +212,7 @@ class Plotter:
             plt.legend(["Variance", "No Variance"], loc = 0)
             plt.show()
 
+<<<<<<< HEAD
         else:
         # Plot avg expansions as epsilon changes for EISMHA*
             EISMHAData = self.scheduler["EISMHA"]
