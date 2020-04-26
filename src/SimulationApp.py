@@ -1093,6 +1093,7 @@ class AlgorithmThread(QThread):
         # Shared Queue
         ################################################################################################
         self.numExp = 0
+        self.pathCost = 0
         #Start the timer for algorithm
         self.startTime = time.time()
         if self.gui.isAlgorithmMultiQueue == False: #runs is the algorithm has a shared Queue
@@ -1119,6 +1120,7 @@ class AlgorithmThread(QThread):
                 StartReached = False
 
                 CurrentNode = self.gui.EndNode
+                self.pathCost = CurrentNode.CostToTravel
                 while (StartReached == False):
 
                     if (CurrentNode == self.gui.StartNode):
@@ -1176,6 +1178,7 @@ class AlgorithmThread(QThread):
             if (self.gui.EndNodeIndividual[GoalKey].parent is not None):
                 StartReached = False
                 CurrentNode = self.gui.EndNodeIndividual[GoalKey]
+                self.pathCost = CurrentNode.CostToTravel
                 while (StartReached == False):
 
                     if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
@@ -1193,9 +1196,11 @@ class AlgorithmThread(QThread):
         #End the timer for algorithm
         self.endTime = time.time()
         totalTime = self.endTime - self.startTime
-        formattedTime = "{:.3f}".format(totalTime)
+        formattedTime = "{:.5f}".format(totalTime)
+        formattedCost = "{:.2f}".format(self.pathCost)
         print("\nTotal Time: ", str(formattedTime) + "s")
         print("Number of Expansions: ", self.numExp)
+        print("Path Cost: ", formattedCost)
         print("\n ===== \n")
 
 class MassTestThread(QThread):
@@ -1238,7 +1243,7 @@ class MassTestThread(QThread):
             simResultsWriter = csv.writer(csvfile, delimiter=",")
             # Check if this is this the first test set of this map. Print headers if it is first test
             if(self.firstSet):
-                simResultsWriter.writerow(['number of expansions', 'execution time', 'start', 'end', 'algorithm', 'variance','epsilon'])
+                simResultsWriter.writerow(['number of expansions', 'execution time', 'start', 'end', 'algorithm', 'variance','epsilon', 'cost'])
                 self.firstSet = False
 
             # Run every algorithm for specified number of times
@@ -1246,16 +1251,16 @@ class MassTestThread(QThread):
                 # Return that the goal has not been found
                 self.signal.emit([False, i+1])
                 # Run specified algorithm once and return testing data: number of expansions, total solving time, and if it found the goal
-                numExpansions, time, foundGoal = self.runSingle()
+                numExpansions, time, foundGoal, cost = self.runSingle()
                 # Write the testing results to the file
                 simResultsWriter.writerow([numExpansions, time, str(startNode.xcoord) + ", " + str(startNode.ycoord),
                                                                         str(endNode.xcoord) + ", " + str(endNode.ycoord), 
-                                                                        str(algorithmName), str(self.gui.RandomVar), self.gui.epsilon])
+                                                                        str(algorithmName), str(self.gui.RandomVar), self.gui.epsilon, cost])
                 # Update and print percentage complete
                 percentComplete = (i+1)/self.gui.numberOfRuns*100
                 print(percentComplete, "%")
 
-
+        self.gui.SimRunning=False
         self.signal.emit([True])
         ###################################################################################
         # this is where youd want to save you CSV to the SimulationCSVs folder.
@@ -1268,6 +1273,7 @@ class MassTestThread(QThread):
         # Shared Queue
         ################################################################################################
         self.numExp = 0
+        self.pathCost = 0
         goalFound = False
         #Start the timer for algorithm
         self.startTime = time.time()
@@ -1294,6 +1300,7 @@ class MassTestThread(QThread):
                 StartReached = False
 
                 CurrentNode = self.gui.EndNode
+                self.pathCost = CurrentNode.CostToTravel
                 while (StartReached == False):
 
                     if (CurrentNode == self.gui.StartNode):
@@ -1336,6 +1343,7 @@ class MassTestThread(QThread):
                         ExploredQueue[key].append(item)
 
                 if (isGoalFound):
+                    self.pathCost = self.gui.EndNode.CostToTravel
                     Done = True
 
                 #Need to check if all Queues are empty
@@ -1347,6 +1355,7 @@ class MassTestThread(QThread):
                 goalFound = True
                 StartReached = False
                 CurrentNode = self.gui.EndNodeIndividual[GoalKey]
+                self.pathCost = CurrentNode.CostToTravel
                 while (StartReached == False):
 
                     if (CurrentNode == self.gui.StartNodeIndividual[GoalKey]):
@@ -1363,10 +1372,13 @@ class MassTestThread(QThread):
         #End the timer for algorithm
         self.endTime = time.time()
         totalTime = self.endTime - self.startTime
-        formattedTime = "{:.3f}".format(totalTime)
+        formattedTime = "{:.5f}".format(totalTime)
+        formattedCost = "{:.2f}".format(self.pathCost)
         print("\nTotal Time: ", str(formattedTime) + "s")
         print("Number of Expansions: ", self.numExp)
+        print("Path Cost: ", formattedCost)
         print("\n ===== \n")
+
         # Clears map for next test
         if self.gui.isAlgorithmMultiQueue == True:
             for key in self.gui.CurrentAlgorithm.Queues.keys():
@@ -1378,7 +1390,7 @@ class MassTestThread(QThread):
                 for anotherItem in item:
                     anotherItem.clearData()
 
-        return self.numExp, formattedTime, goalFound
+        return self.numExp, formattedTime, goalFound, self.pathCost
 
 
 if __name__ == '__main__':

@@ -33,7 +33,7 @@ class SchedulerCSVDataContainer:
         self.instances = 0
 
     # Update all the lists. As of 4/25 Cost is a default value until it is added to the CSV
-    def updateData(self, expansions, time, variance, epsilon, cost = 0):
+    def updateData(self, expansions, time, variance, epsilon, cost):
         # Determine if variance was checked to put the data in the 
         # correct list
         if(variance == "True"):
@@ -92,15 +92,10 @@ class Plotter:
                     schedulerName = row[4]
                     variance = row[5]
                     epsilon = row[6]
-                    
-                    # Try catch until cost data is added to the CSV (4/25)
-                    try:
-                        cost = row[7]
-                    except:
-                        cost = 0
+                    cost = float(row[7])
                     
                     # Use this new data to update the information about the scheduler
-                    self.scheduler[schedulerName].updateData(expansions, time, variance, epsilon)
+                    self.scheduler[schedulerName].updateData(expansions, time, variance, epsilon, cost)
                 firstRow = False
 
         # relevant lists for plotting averaged data without variance
@@ -188,6 +183,5 @@ class Plotter:
 
     # Plot avg expansions as epsilon changes for EISMHA*
 
-data = Plotter('csvPlot_both2_aLittleBitOfEverything2.csv')
+data = Plotter('test1_aLittleBitOfEverything2.csv')
 data.plot()
-
