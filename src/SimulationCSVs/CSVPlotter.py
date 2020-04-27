@@ -75,7 +75,7 @@ class SchedulerCSVDataContainer:
                     self.epsilonDict[epsilon].costAvgNoVariance = sum(self.epsilonDict[epsilon].costListNoVariance)/lengthNoVariance
                 
 class Plotter:
-    def __init__(self, fileName):
+    def __init__(self, fileName, barGraph = False):
         # A dictionary to store all the containers for each scheduler
         self.scheduler = {
             "Individual A* DTS": SchedulerCSVDataContainer(),
@@ -87,6 +87,7 @@ class Plotter:
 
         # Filename we're parsing
         self.fileName = fileName
+        self.barGraph = barGraph
 
     # If epsilon is constant, then we are plotting to compare EISMHA and other algorithms
     # if epsilon is NOT constant, then we are comparing the performance of EISMHA with itself across different 
@@ -114,6 +115,7 @@ class Plotter:
         # avg the values for each scheduler
         # must use sorted keys so that everything lines up for the plot, otherwise it is inconsistent (property of hashmap)
         sortedDict = list(sorted(self.scheduler.keys()))
+        print(sortedDict)
         epsilons = self.scheduler[sortedDict[0]].epsilonDict.keys()
         print(epsilons)
         EISMHASpecificPerformancsList = []
@@ -131,7 +133,6 @@ class Plotter:
             expPlotListVariance = []
             timePlotListVariance = []
             costPlotListVariance = []
-            print(len(sortedDict))
             for s in range(len(sortedDict)):
                 #remove from the names list if it is not in the CSV
                 print(sortedDict[s], self.scheduler[sortedDict[s]].instances)
@@ -163,7 +164,8 @@ class Plotter:
                                                                 self.scheduler[sortedDict[s]].epsilonDict[epsilon].costAvgNoVariance])
                     else:
                         # For every other algorithm, we can choose a generic epsilon:
-                        genericEpsilon = list(self.scheduler[sortedDict[s]].epsilonDict.keys())[0]
+                        genericEpsilon = list(sorted(self.scheduler[sortedDict[s]].epsilonDict.keys()))[0]
+                        print(genericEpsilon)
                          # Variance Lists
                         expPlotListVariance.append(self.scheduler[sortedDict[s]].epsilonDict[genericEpsilon].expAvgVariance)
                         timePlotListVariance.append(self.scheduler[sortedDict[s]].epsilonDict[genericEpsilon].timeAvgVariance)
@@ -178,100 +180,114 @@ class Plotter:
             # Delete the names that don't appear in the CSV from the list
             for index in indexesToRemove:
                 print("Deleting:", schedulerNames[index])
-                del schedulerNames[index]        
+                del schedulerNames[index]
+            if (self.barGraph):
+                barWidth = .10
+                plt.figure()
+                plt.grid(linestyle='--', linewidth=.5)
+                # Plot bar graph of Avg Expansions with and without variance
+                # These first two lists are the positions of the bar. I place two next to eachother using barWidth/2
+                #If there is no data for variance, or vice versa, just center the label.
+                if(sum(expPlotListNoVariance) == 0):
+                    barsVariancePos = [i+barWidth for i, _ in enumerate(schedulerNames)]
+                    plt.bar(barsVariancePos, expPlotListVariance,color = 'b', width = barWidth, align='center')
+                    plt.legend(["Variance"], loc=0)
+                elif(sum(expPlotListVariance) == 0):
+                    barsNoVariancePos = [i+barWidth for i, _ in enumerate(schedulerNames)]
+                    plt.bar(barsNoVariancePos, expPlotListNoVariance,color = 'r', width = barWidth, align='center')
+                    plt.legend(["No Variance"], loc=0)
 
-            barWidth = .10
+                #Otherwise we have data for both, so lets center it between them
+                else:
+                    barsVariancePos = [i for i, _ in enumerate(schedulerNames)]
+                    barsNoVariancePos = [i+barWidth/2 for i, _ in enumerate(schedulerNames)]
+                    plt.bar(barsVariancePos, expPlotListVariance,color = 'b', width = barWidth, align='center')
+                    plt.bar(barsNoVariancePos, expPlotListNoVariance,color = 'r', width = barWidth, align='edge')
+                    plt.legend(["Variance", "No Variance"], loc=0)
+                plt.xticks(barsNoVariancePos, schedulerNames)
+                plt.xlabel('Scheduler Used')
+                plt.ylabel('Expansions Made')
+                plt.title('Average Number of Expansions, Epsilon: ' + str(epsilon))
+                plt.show(block = False)
+
+                plt.figure()
+                plt.grid(linestyle='--', linewidth=.5)
+                # # Plot bar graph of avg time with and without variance
+                if(sum(timePlotListNoVariance) == 0):
+                    plt.bar(barsVariancePos, timePlotListVariance,color = 'b', width = barWidth, align='center')
+                    plt.legend(["Variance"], loc=0)
+                elif(sum(timePlotListVariance) == 0):
+                    plt.bar(barsNoVariancePos, timePlotListNoVariance,color = 'r', width = barWidth, align='center')
+                    plt.legend(["No Variance"], loc=0)
+                else:
+                    plt.bar(barsVariancePos, timePlotListVariance,color = 'b', width = barWidth, align='center')
+                    plt.bar(barsNoVariancePos, timePlotListNoVariance,color = 'r', width = barWidth, align='edge')
+                    plt.legend(["Variance", "No Variance"], loc=0)
+                plt.xticks(barsNoVariancePos, schedulerNames)
+                plt.xlabel('Scheduler Used')
+                plt.ylabel('Execution Time (sec)')
+                plt.title('Average Execution Time, Epsilon: ' + str(epsilon))
+                plt.show(block = False)
+
+                # # Plot bar graph of avg cost with and without variance
+                plt.figure()
+                plt.grid(linestyle='--', linewidth=.5)
+                if(sum(costPlotListNoVariance) == 0):
+                    plt.bar(barsVariancePos, costPlotListVariance,color = 'b', width = barWidth, align='center')
+                    plt.legend(["Variance"], loc=0)
+                elif(sum(costPlotListVariance) == 0):
+                    plt.bar(barsNoVariancePos, costPlotListNoVariance,color = 'r', width = barWidth, align='center')
+                    plt.legend(["No Variance"], loc=0)
+                else:
+                    plt.bar(barsVariancePos, costPlotListVariance,color = 'b', width = barWidth, align='center')
+                    plt.bar(barsNoVariancePos, costPlotListNoVariance,color = 'r', width = barWidth, align='edge')
+                    plt.legend(["Variance", "No Variance"], loc=0)
+                plt.xticks(barsNoVariancePos, schedulerNames)
+                plt.xlabel('Scheduler Used')
+                plt.ylabel('Path Cost (Units)')
+                plt.title('Average Path Cost, Epsilon: ' + str(epsilon))
+                plt.show(block = False)
+
+        # If we have more than 1 epsilon
+        if(len(EISMHASpecificPerformancsList) > 1):
+            #Plot performance of just EISMHA for each epsilon
+            epsilonValues = []
+            timesVariance = []
+            costsVariance = []
+            expansionsVariance = []
+            timesNoVariance = []
+            costsNoVariance = []
+            expansionsNoVariance = []
+            for dataPoint in EISMHASpecificPerformancsList:
+                epsilonValues.append(dataPoint[0])
+                expansionsVariance.append(dataPoint[1])
+                timesVariance.append(dataPoint[2])
+                costsVariance.append(dataPoint[3])
+                expansionsNoVariance.append(dataPoint[4])
+                timesNoVariance.append(dataPoint[5])
+                costsNoVariance.append(dataPoint[6])
+
+            # Sort the two lists together
+            zipped_lists = zip(epsilonValues, expansionsNoVariance)
+            sorted_pairs = sorted(zipped_lists)
+
+            tuples = zip(*sorted_pairs)
             plt.figure()
-            plt.grid(linestyle='--', linewidth=.5)
-            # Plot bar graph of Avg Expansions with and without variance
-            # These first two lists are the positions of the bar. I place two next to eachother using barWidth/2
+            epsilonValues, expansionsNoVariance = [ list(tuple) for tuple in  tuples]
 
-            #If there is no data for variance, or vice versa, just center the label. 
-            if(sum(expPlotListNoVariance) == 0):
-                barsVariancePos = [i+barWidth for i, _ in enumerate(schedulerNames)]
-                plt.bar(barsVariancePos, expPlotListVariance,color = 'b', width = barWidth, align='center')
-            elif(sum(expPlotListVariance) == 0):
-                barsNoVariancePos = [i+barWidth for i, _ in enumerate(schedulerNames)]
-                plt.bar(barsNoVariancePos, expPlotListNoVariance,color = 'r', width = barWidth, align='center')
-            
-            #Otherwise we have data for both, so lets center it between them
-            else:
-                barsVariancePos = [i for i, _ in enumerate(schedulerNames)]
-                barsNoVariancePos = [i+barWidth/2 for i, _ in enumerate(schedulerNames)]
-                plt.bar(barsVariancePos, expPlotListVariance,color = 'b', width = barWidth, align='center')
-                plt.bar(barsNoVariancePos, expPlotListNoVariance,color = 'r', width = barWidth, align='edge')
-            plt.xticks(barsNoVariancePos, schedulerNames)
-            plt.xlabel('Scheduler Used')
-            plt.ylabel('Expansions Made')
-            plt.title('Average Number of Expansions, Epsilon: ' + str(epsilon))
-            plt.legend(["Variance", "No Variance"],loc = 0)
+            plt.plot(epsilonValues, expansionsNoVariance, linewidth = 2)
+
+            labels = ["EISMHA*"]
+            for i in range(1, len(expPlotListNoVariance)):
+                plt.plot([0.0, epsilonValues[-1]], [expPlotListNoVariance[i], expPlotListNoVariance[i]], linewidth=2)
+                labels.append(sortedDict[i])
+                plt.legend(labels, loc = 0)
+            plt.xlabel('Epsilon Value')
+            plt.ylabel('Number of Expansions')
+            plt.title('Expansions vs Epsilon')
             plt.show(block = False)
-
-            plt.figure()
-            plt.grid(linestyle='--', linewidth=.5)
-            # # Plot bar graph of avg time with and without variance
-            if(sum(timePlotListNoVariance) == 0):
-                plt.bar(barsVariancePos, timePlotListVariance,color = 'b', width = barWidth, align='center')
-            elif(sum(timePlotListVariance) == 0):
-                plt.bar(barsNoVariancePos, timePlotListNoVariance,color = 'r', width = barWidth, align='center')
-            else:
-                plt.bar(barsVariancePos, timePlotListVariance,color = 'b', width = barWidth, align='center')
-                plt.bar(barsNoVariancePos, timePlotListNoVariance,color = 'r', width = barWidth, align='edge')
-            plt.xticks(barsNoVariancePos, schedulerNames)
-            plt.xlabel('Scheduler Used')
-            plt.ylabel('Execution Time (sec)')
-            plt.title('Average Execution Time, Epsilon: ' + str(epsilon))
-            plt.legend(["Variance", "No Variance"], loc = 0)
-            plt.show(block = False)
-
-            # # Plot bar graph of avg cost with and without variance
-            plt.figure()
-            plt.grid(linestyle='--', linewidth=.5)
-            if(sum(costPlotListNoVariance) == 0):
-                plt.bar(barsVariancePos, costPlotListVariance,color = 'b', width = barWidth, align='center')
-            elif(sum(costPlotListVariance) == 0):
-                plt.bar(barsNoVariancePos, costPlotListNoVariance,color = 'r', width = barWidth, align='center')
-            else:
-                plt.bar(barsVariancePos, costPlotListVariance,color = 'b', width = barWidth, align='center')
-                plt.bar(barsNoVariancePos, costPlotListNoVariance,color = 'r', width = barWidth, align='edge')
-            plt.xticks(barsNoVariancePos, schedulerNames)
-            plt.xlabel('Scheduler Used')
-            plt.ylabel('Path Cost (Units)')
-            plt.title('Average Path Cost, Epsilon: ' + str(epsilon))
-            plt.legend(["Variance", "No Variance"], loc = 0)
-            plt.show(block = False)
-
-        #Plot performance of just EISMHA for each epsilon
-        epsilonValues = []
-        timesVariance = []
-        costsVariance = []
-        expansionsVariance = []
-        timesNoVariance = []
-        costsNoVariance = []
-        expansionsNoVariance = []
-        for dataPoint in EISMHASpecificPerformancsList:
-            epsilonValues.append(dataPoint[0])
-            expansionsVariance.append(dataPoint[1])
-            timesVariance.append(dataPoint[2])
-            costsVariance.append(dataPoint[3])
-            expansionsNoVariance.append(dataPoint[4])
-            timesNoVariance.append(dataPoint[5])
-            costsNoVariance.append(dataPoint[6])
-
-        # Sort the two lists together
-        zipped_lists = zip(epsilonValues, expansionsNoVariance)
-        sorted_pairs = sorted(zipped_lists)
-
-        tuples = zip(*sorted_pairs)
-        plt.figure()
-        epsilonValues, expansionsNoVariance = [ list(tuple) for tuple in  tuples]
-        plt.plot(epsilonValues, expansionsNoVariance, linewidth = 2)
-        plt.xlabel('Epsilon Value')
-        plt.ylabel('Number of Expansions')
-        plt.title('Expansions vs Epsilon')
-        plt.show(block = False)
         plt.show()
 
-data = Plotter('src/SimulationCSVs/finalTestOfTheDat_aLittleBitOfEverything2.csv')
+data = Plotter('SimTest_aLittleBitOfEverything2_epsilons.csv', barGraph = False)
 data.plot()
 

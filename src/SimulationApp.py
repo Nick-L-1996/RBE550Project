@@ -819,21 +819,29 @@ class SimulationMap(QtWidgets.QMainWindow):
         if text == "Shared MultiHeuristic A*":
             # print("RR Shared MultiHeuristic A*")
             self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHA*", verbose = False)
+            self.epsilon = 0.3
+            self.epsilonEntry.setText("0.3")
             self.isAlgorithmMultiQueue = False
             self.epsilonEntry.setEnabled(False)
         elif text == "Shared MultiHeuristic Greedy Best First Search":
             # print("Shared MultiHeuristic Greedy Best First Search)
             self.CurrentAlgorithm = SharedQueueAlgorithm(self.MapNode, self.EndNode, None, algorithm="MHGBFS", verbose = False)
+            self.epsilon = 0.3
+            self.epsilonEntry.setText("0.3")
             self.isAlgorithmMultiQueue = False
             self.epsilonEntry.setEnabled(False)
         elif text == "Individual Greedy DTS":
             # print("Individual Greedy DTS")
             self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual, self.EndNodeIndividual, algorithm="DTSGreedy",  verbose = False)
+            self.epsilon = 0.3
+            self.epsilonEntry.setText("0.3")
             self.isAlgorithmMultiQueue = True
             self.epsilonEntry.setEnabled(False)
         elif text == "Individual A* DTS":
             # print("Individual A* DTS")
             self.CurrentAlgorithm = IndependentQueueAlgorithm(self.MapNodeIndividual, self.StartNodeIndividual,self.EndNodeIndividual, algorithm="DTSA*",  verbose = False)
+            self.epsilon = 0.3
+            self.epsilonEntry.setText("0.3")
             self.isAlgorithmMultiQueue = True
             self.epsilonEntry.setEnabled(False)
         elif text == "EISMHA":
