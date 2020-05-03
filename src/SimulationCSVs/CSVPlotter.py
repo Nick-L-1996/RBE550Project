@@ -288,6 +288,6 @@ class Plotter:
             plt.show(block = False)
         plt.show()
 
-data = Plotter('SimTest_aLittleBitOfEverything2_epsilons.csv', barGraph = False)
+data = Plotter('WackyMaze_WackyMaze.csv', barGraph = True)
 data.plot()
 
