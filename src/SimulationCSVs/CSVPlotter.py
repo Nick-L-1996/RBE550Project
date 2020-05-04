@@ -192,10 +192,17 @@ class Plotter:
                     barsVariancePos = [i+barWidth for i, _ in enumerate(schedulerNames)]
                     plt.bar(barsVariancePos, expPlotListVariance,color = 'b', width = barWidth, align='center')
                     plt.legend(["Variance"], loc=0)
+                    plt.xticks(barsVariancePos, schedulerNames)
+                    for i, v in enumerate(expPlotListVariance):
+                        plt.text(i, v + 1000, " " + str(int(v)), color='blue', va = "center")
+
                 elif(sum(expPlotListVariance) == 0):
                     barsNoVariancePos = [i+barWidth for i, _ in enumerate(schedulerNames)]
                     plt.bar(barsNoVariancePos, expPlotListNoVariance,color = 'r', width = barWidth, align='center')
                     plt.legend(["No Variance"], loc=0)
+                    plt.xticks(barsNoVariancePos, schedulerNames)
+                    for i, v in enumerate(expPlotListNoVariance):
+                        plt.text(i, v + 1000, " " + str(int(v)), color='red',  va = "center")
 
                 #Otherwise we have data for both, so lets center it between them
                 else:
@@ -204,7 +211,11 @@ class Plotter:
                     plt.bar(barsVariancePos, expPlotListVariance,color = 'b', width = barWidth, align='center')
                     plt.bar(barsNoVariancePos, expPlotListNoVariance,color = 'r', width = barWidth, align='edge')
                     plt.legend(["Variance", "No Variance"], loc=0)
-                plt.xticks(barsNoVariancePos, schedulerNames)
+                    plt.xticks(barsVariancePos, schedulerNames)
+                    for i, v in enumerate(expPlotListVariance):
+                        plt.text(i - .15, v + 1000, " " + str(int(v)), color='blue')
+                    for i, v in enumerate(expPlotListNoVariance):
+                        plt.text(i + .15, v + 1000, " " + str(int(v)), color='red')
                 plt.xlabel('Scheduler Used')
                 plt.ylabel('Expansions Made')
                 plt.title('Average Number of Expansions, Epsilon: ' + str(epsilon))
@@ -216,14 +227,24 @@ class Plotter:
                 if(sum(timePlotListNoVariance) == 0):
                     plt.bar(barsVariancePos, timePlotListVariance,color = 'b', width = barWidth, align='center')
                     plt.legend(["Variance"], loc=0)
+                    plt.xticks(barsVariancePos, schedulerNames)
+                    for i, v in enumerate(timePlotListVariance):
+                        plt.text(i, v + .015, " " + str(v)[0:5], color='blue', va="center")
                 elif(sum(timePlotListVariance) == 0):
                     plt.bar(barsNoVariancePos, timePlotListNoVariance,color = 'r', width = barWidth, align='center')
                     plt.legend(["No Variance"], loc=0)
+                    plt.xticks(barsNoVariancePos, schedulerNames)
+                    for i, v in enumerate(timePlotListNoVariance):
+                        plt.text(i, v + .015, " " + str(v)[0:5], color='red', va="center")
                 else:
                     plt.bar(barsVariancePos, timePlotListVariance,color = 'b', width = barWidth, align='center')
                     plt.bar(barsNoVariancePos, timePlotListNoVariance,color = 'r', width = barWidth, align='edge')
                     plt.legend(["Variance", "No Variance"], loc=0)
-                plt.xticks(barsNoVariancePos, schedulerNames)
+                    plt.xticks(barsNoVariancePos, schedulerNames)
+                    for i, v in enumerate(timePlotListVariance):
+                        plt.text(i - .15, v + .015, " " + str(v)[0:5], color='blue')
+                    for i, v in enumerate(timePlotListNoVariance):
+                        plt.text(i + .15, v + .015, " " + str(v)[0:5], color='red')
                 plt.xlabel('Scheduler Used')
                 plt.ylabel('Execution Time (sec)')
                 plt.title('Average Execution Time, Epsilon: ' + str(epsilon))
@@ -235,14 +256,26 @@ class Plotter:
                 if(sum(costPlotListNoVariance) == 0):
                     plt.bar(barsVariancePos, costPlotListVariance,color = 'b', width = barWidth, align='center')
                     plt.legend(["Variance"], loc=0)
+                    plt.xticks(barsVariancePos, schedulerNames)
+                    for i, v in enumerate(costPlotListVariance):
+                        plt.text(i, v + (v/60), " " + str(int(v)), color='blue', va = "center")
+
                 elif(sum(costPlotListVariance) == 0):
                     plt.bar(barsNoVariancePos, costPlotListNoVariance,color = 'r', width = barWidth, align='center')
                     plt.legend(["No Variance"], loc=0)
+                    plt.xticks(barsNoVariancePos, schedulerNames)
+                    for i, v in enumerate(costPlotListNoVariance):
+                        plt.text(i, v + (v/60), " " + str(int(v)), color='red', va = "center")
+
                 else:
                     plt.bar(barsVariancePos, costPlotListVariance,color = 'b', width = barWidth, align='center')
                     plt.bar(barsNoVariancePos, costPlotListNoVariance,color = 'r', width = barWidth, align='edge')
                     plt.legend(["Variance", "No Variance"], loc=0)
-                plt.xticks(barsNoVariancePos, schedulerNames)
+                    plt.xticks(barsNoVariancePos, schedulerNames)
+                    for i, v in enumerate(costPlotListVariance):
+                        plt.text(i - .15, v + (v/60), " " + str(int(v)), color='blue')
+                    for i, v in enumerate(costPlotListNoVariance):
+                        plt.text(i + .15, v + (v/60), " " + str(int(v)), color='red')
                 plt.xlabel('Scheduler Used')
                 plt.ylabel('Path Cost (Units)')
                 plt.title('Average Path Cost, Epsilon: ' + str(epsilon))
@@ -288,6 +321,6 @@ class Plotter:
             plt.show(block = False)
         plt.show()
 
-data = Plotter('WackyMaze_WackyMaze.csv', barGraph = True)
+data = Plotter('NoVar__aSliverOfHope2.csv', barGraph = True)
 data.plot()
 
