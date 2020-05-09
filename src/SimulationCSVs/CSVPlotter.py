@@ -301,14 +301,60 @@ class Plotter:
                 costsNoVariance.append(dataPoint[6])
 
             # Sort the two lists together
-            zipped_lists = zip(epsilonValues, expansionsNoVariance)
-            sorted_pairs = sorted(zipped_lists)
+            zipped_listsExp = zip(epsilonValues, expansionsNoVariance)
+            zipped_listsTime = zip(epsilonValues, timesNoVariance)
+            zipped_listsCost = zip(epsilonValues, costsNoVariance)
 
-            tuples = zip(*sorted_pairs)
+            # Sort the two lists together
+            zipped_listsExpVar = zip(epsilonValues, expansionsVariance)
+            zipped_listsTimeVar = zip(epsilonValues, timesVariance)
+            zipped_listsCostVar = zip(epsilonValues, costsVariance)
+
+            # Sorted expansions
+            sorted_pairsExp = sorted(zipped_listsExp)
+            tuplesExp = zip(*sorted_pairsExp)
             plt.figure()
-            epsilonValues, expansionsNoVariance = [ list(tuple) for tuple in  tuples]
+            epsilonValues, expansionsNoVariance = [ list(tuple) for tuple in  tuplesExp]
+
+            # Sorted costs
+            sorted_pairsCost = sorted(zipped_listsCost)
+            tuplesCost = zip(*sorted_pairsCost)
+            plt.figure()
+            epsilonValues, costsNoVariance = [list(tuple) for tuple in tuplesCost]
+
+            #sorted times
+            sorted_pairsTime = sorted(zipped_listsTime)
+            tuplesTime = zip(*sorted_pairsTime)
+            plt.figure()
+            epsilonValues, timesNoVariance = [list(tuple) for tuple in tuplesTime]
+
+            # Sorted expansions with Variance
+            sorted_pairsExpVar = sorted(zipped_listsExpVar)
+            tuplesExpVar = zip(*sorted_pairsExpVar)
+            plt.figure()
+            epsilonValues, expansionsVariance = [list(tuple) for tuple in tuplesExpVar]
+
+            # Sorted costs
+            sorted_pairsCostVar = sorted(zipped_listsCostVar)
+            tuplesCostVar = zip(*sorted_pairsCostVar)
+            plt.figure()
+            epsilonValues, costsVariance = [list(tuple) for tuple in tuplesCostVar]
+
+            # sorted times
+            sorted_pairsTimeVar = sorted(zipped_listsTimeVar)
+            tuplesTimeVar = zip(*sorted_pairsTimeVar)
+            plt.figure()
+            epsilonValues, timesVariance = [list(tuple) for tuple in tuplesTimeVar]
 
             plt.plot(epsilonValues, expansionsNoVariance, linewidth = 2)
+            print("Expansions EISMHA No Variance", expansionsNoVariance)
+            print("Cost EISMHA No Variance", costsNoVariance)
+            print("Time EISMHA No Variance", timesNoVariance)
+
+            print("Expansions EISMHA With Variance", expansionsVariance)
+            print("Cost EISMHA With Variance", costsVariance)
+            print("Time EISMHA With Variance", timesVariance)
+
 
             labels = ["EISMHA*"]
             for i in range(1, len(expPlotListNoVariance)):
@@ -321,6 +367,6 @@ class Plotter:
             plt.show(block = False)
         plt.show()
 
-data = Plotter('NoVar__aSliverOfHope2.csv', barGraph = True)
+data = Plotter('Var__flooded_forest_roads.csv', barGraph = False)
 data.plot()
 
